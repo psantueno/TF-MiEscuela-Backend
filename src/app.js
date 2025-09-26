@@ -38,7 +38,7 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, async () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
   try {
-    // await sequelize.authenticate();    ⚠️ ACTUALIZAR CONEXIÓN CUANDO SE CREE LA DB 
+    await sequelize.authenticate();  
     console.log("Conexión a la base de datos exitosa ✅");
   } catch (error) {
     console.error("Error al conectar DB ❌:", error);
