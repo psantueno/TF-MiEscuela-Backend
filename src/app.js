@@ -5,6 +5,9 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { sequelize } from "./config/database.js";
 
+// ====================== Rutas ===================
+import asistenciaRoutes from "./routes/asistenciaRoutes.js";
+
 const app = express();
 
 // ──────────────── Middlewares globales ────────────────
@@ -27,10 +30,12 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
-// ──────────────── Rutas de prueba ────────────────
+// ──────────────── ROUTER ────────────────
 app.get("/", (req, res) => {
   res.json({ message: "Bienvenido a MiEscuela 4.0 Backend 🚀" });
 });
+
+app.use("/api/asistencias", asistenciaRoutes);
 
 // ──────────────── Arranque del servidor ────────────────
 const PORT = process.env.PORT || 4000;
