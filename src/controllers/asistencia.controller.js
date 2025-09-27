@@ -1,8 +1,8 @@
 import { Asistencia } from "../models/Asistencia.js";
-import { Alumno } from "../models/Alumno.js";
-import { Curso } from "../models/Curso.js";
-import { Usuario } from "../models/Usuario.js";
-import { AsistenciaEstado } from "../models/AsistenciaEstado.js";
+// import { Alumno } from "../models/Alumno.js";
+// import { Curso } from "../models/Curso.js";
+// import { Usuario } from "../models/Usuario.js";
+// import { AsistenciaEstado } from "../models/AsistenciaEstado.js";
 
 // Crear asistencia
 export const crearAsistencia = async (req, res) => {

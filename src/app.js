@@ -4,9 +4,12 @@ import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { sequelize } from "./config/database.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
+import cookieParser from "cookie-parser";
 
 // ====================== Rutas ===================
-import asistenciaRoutes from "./routes/asistenciaRoutes.js";
+import authRoutes from "./routes/auth.routes.js";
+import asistenciaRoutes from "./routes/asistencia.routes.js";
 
 const app = express();
 
@@ -14,8 +17,6 @@ const app = express();
 
 app.use(helmet()); // Seguridad HTTP headers
 app.use(cors({ origin: "http://localhost:5173", credentials: true })); //  Cambiár la URL por la del frontend en producción
-
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -30,12 +31,18 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
+app.use(cookieParser()); // Parseo de cookies
+
 // ──────────────── ROUTER ────────────────
 app.get("/", (req, res) => {
   res.json({ message: "Bienvenido a MiEscuela 4.0 Backend 🚀" });
 });
 
 app.use("/api/asistencias", asistenciaRoutes);
+app.use("/api/auth", authRoutes);
+
+// ──────────────── Manejo de errores ────────────────
+app.use(errorHandler);
 
 // ──────────────── Arranque del servidor ────────────────
 const PORT = process.env.PORT || 4000;
