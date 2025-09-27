@@ -1,9 +1,9 @@
 // models/Asistencia.js
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
-import { Alumno } from "./Alumno.js";
-import { Curso } from "./Curso.js";
-import { Usuario } from "./Usuario.js";
+// import { Alumno } from "./Alumno.js";
+// import { Curso } from "./Curso.js";
+// import { Usuario } from "./Usuario.js";
 import { AsistenciaEstado } from "./AsistenciaEstado.js";
 
 export const Asistencia = sequelize.define("Asistencia", {
@@ -30,7 +30,7 @@ export const Asistencia = sequelize.define("Asistencia", {
 });
 
 // Relaciones
-Asistencia.belongsTo(Alumno, { foreignKey: "id_alumno" });
-Asistencia.belongsTo(Curso, { foreignKey: "id_curso" });
-Asistencia.belongsTo(Usuario, { foreignKey: "registrado_por" });
+// Asistencia.belongsTo(Alumno, { foreignKey: "id_alumno" });
+// Asistencia.belongsTo(Curso, { foreignKey: "id_curso" });
+// Asistencia.belongsTo(Usuario, { foreignKey: "registrado_por" });
 Asistencia.belongsTo(AsistenciaEstado, { foreignKey: "id_estado" });

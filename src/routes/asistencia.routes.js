@@ -7,7 +7,7 @@ import {
   eliminarAsistencia,
   obtenerAsistenciasPorCurso,
   obtenerAsistenciasPorAlumno
-} from "../controllers/asistenciaController.js";
+} from "../controllers/asistencia.controller.js";
 
 const router = express.Router();
 
