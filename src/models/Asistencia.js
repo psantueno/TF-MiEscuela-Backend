@@ -1,10 +1,6 @@
 // models/Asistencia.js
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
-// import { Alumno } from "./Alumno.js";
-// import { Curso } from "./Curso.js";
-// import { Usuario } from "./Usuario.js";
-import { AsistenciaEstado } from "./AsistenciaEstado.js";
 
 export const Asistencia = sequelize.define("Asistencia", {
   id_asistencia: {
@@ -12,25 +8,34 @@ export const Asistencia = sequelize.define("Asistencia", {
     primaryKey: true,
     autoIncrement: true
   },
+  id_alumno: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  id_curso: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
   fecha: {
     type: DataTypes.DATEONLY,
+    allowNull: false
+  },
+  id_estado: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  registrado_por: {
+    type: DataTypes.INTEGER,
     allowNull: false
   },
   observaciones: {
     type: DataTypes.TEXT,
     allowNull: true
-  },
-  creado_en: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: "asistencias",
-  timestamps: false
+  timestamps: true,            // Sequelize maneja creado_el / actualizado_el
+  createdAt: "creado_el",
+  updatedAt: "actualizado_el"
 });
 
-// Relaciones
-// Asistencia.belongsTo(Alumno, { foreignKey: "id_alumno" });
-// Asistencia.belongsTo(Curso, { foreignKey: "id_curso" });
-// Asistencia.belongsTo(Usuario, { foreignKey: "registrado_por" });
-Asistencia.belongsTo(AsistenciaEstado, { foreignKey: "id_estado" });
