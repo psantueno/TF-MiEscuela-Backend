@@ -4,11 +4,11 @@ const ACCESS_TOKEN = process.env.JWT_ACCESS_SECRET;
 const REFRESH_TOKEN = process.env.JWT_REFRESH_SECRET;
 
 export const generateAccessToken = (user) => {
-    return jwt.sign({ id_usuario: user.id_usuario }, ACCESS_TOKEN, { expiresIn: "1h" });
+    return jwt.sign({ id_usuario: user.id_usuario, nombre_completo: user.nombre_completo, email: user.email, rol: user.rol, notificaciones: user.notificaciones }, ACCESS_TOKEN, { expiresIn: "1h" });
 };
 
 export const generateRefreshToken = (user) => {
-    return jwt.sign({ id_usuario: user.id_usuario }, REFRESH_TOKEN, { expiresIn: "1d" });
+    return jwt.sign({ id_usuario: user.id_usuario, nombre_completo: user.nombre_completo, email: user.email, rol: user.rol, notificaciones: user.notificaciones }, REFRESH_TOKEN, { expiresIn: "1d" });
 };
 
 export const verifyToken = (token, type) => {
