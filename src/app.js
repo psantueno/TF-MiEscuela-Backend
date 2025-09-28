@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 // ====================== Rutas ===================
 import authRoutes from "./routes/auth.routes.js";
 import asistenciaRoutes from "./routes/asistencia.routes.js";
+import asistenciaEstadoRoutes from "./routes/asistenciaEstado.routes.js";
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/asistencias", asistenciaRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/asistencia-estados", asistenciaEstadoRoutes);
 
 // ──────────────── Manejo de errores ────────────────
 app.use(errorHandler);

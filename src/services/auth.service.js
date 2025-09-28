@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/jwt.util.js';
-import { Usuario } from '../models/Usuario.model.js';
+import { Usuario } from '../models/Usuario.js';
 
 export const login = async (email, password) => {
     const user = await Usuario.findOne({ where: { email } });
