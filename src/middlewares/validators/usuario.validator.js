@@ -6,11 +6,22 @@ const getUsuariosSchema = z.object({
     perPage: z.number("El número de resultados por página debe ser un número").int("El número de resultados por página debe ser un número entero").min(1, "El número de resultados por página debe ser mayor o igual a 1")
 });
 
-const createUpdateUsuarioSchema = z.object({
+const createUsuarioSchema = z.object({
     nombre_completo: z.string("El nombre completo debe ser una cadena de caracteres").min(1, "El nombre completo es obligatorio"),
     numero_documento: z.string("El número de documento debe ser una cadena de caracteres").min(1, "El número de documento es obligatorio"),
     email: z.string("El email debe ser una cadena de caracteres").regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "El formato del email no es válido"),
     contrasenia: z.string("La contraseña debe ser una cadena de caracteres").min(8, "La contraseña debe tener al menos 8 caracteres"),
+    telefono: z.string("El teléfono debe ser una cadena de caracteres").optional(),
+    direccion: z.string("La dirección debe ser una cadena de caracteres").optional(),
+    fecha_nacimiento: z.string("La fecha de nacimiento debe ser una cadena de caracteres").optional(),
+    genero: z.string("El género debe ser una cadena de caracteres").optional(),
+    id_rol: z.number("El ID del rol debe ser un número").int().min(1, "El ID del rol es obligatorio")
+})
+
+const updateUsuarioSchema = z.object({
+    nombre_completo: z.string("El nombre completo debe ser una cadena de caracteres").min(1, "El nombre completo es obligatorio"),
+    numero_documento: z.string("El número de documento debe ser una cadena de caracteres").min(1, "El número de documento es obligatorio"),
+    email: z.string("El email debe ser una cadena de caracteres").regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "El formato del email no es válido"),
     telefono: z.string("El teléfono debe ser una cadena de caracteres").optional(),
     direccion: z.string("La dirección debe ser una cadena de caracteres").optional(),
     fecha_nacimiento: z.string("La fecha de nacimiento debe ser una cadena de caracteres").optional(),
@@ -39,7 +50,7 @@ export const validateCreateUsuario = (req, res, next) => {
     try{
         if(!req.body) throw new Error("No se recibieron datos");
 
-        createUpdateUsuarioSchema.parse(req.body);
+        createUsuarioSchema.parse(req.body);
         next();
     }catch(error){
         const err = errorHandler(error, z);
@@ -51,7 +62,7 @@ export const validateUpdateUsuario = (req, res, next) => {
     try{
         if(!req.body) throw new Error("No se recibieron datos");
 
-        createUpdateUsuarioSchema.parse(req.body);
+        updateUsuarioSchema.parse(req.body);
         next();
     }catch(error){
         const err = errorHandler(error, z);
