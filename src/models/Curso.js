@@ -7,10 +7,6 @@ export const Curso = sequelize.define("Curso", {
     primaryKey: true,
     autoIncrement: true
   },
-  id_escuela: {
-    type: DataTypes.INTEGER,
-    allowNull: true
-  },
   anio_escolar: {
     type: DataTypes.INTEGER,
     allowNull: false

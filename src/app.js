@@ -12,6 +12,7 @@ import authRoutes from "./routes/auth.routes.js";
 import asistenciaRoutes from "./routes/asistencia.routes.js";
 import asistenciaEstadoRoutes from "./routes/asistenciaEstado.routes.js";
 import usuarioRoutes from "./routes/usuario.routes.js";
+import cursoRoutes from "./routes/curso.routes.js";
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use("/api/asistencias", asistenciaRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/asistencia-estados", asistenciaEstadoRoutes);
 app.use("/api/usuarios", usuarioRoutes);
+app.use("/api/cursos", cursoRoutes);
 
 // ──────────────── Manejo de errores ────────────────
 app.use(errorHandler);
