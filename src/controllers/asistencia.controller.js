@@ -1,38 +1,23 @@
 import { Op } from "sequelize";
-import { Asistencia, Alumno, Curso} from "../models/index.js";
+import { Asistencia, Alumno, Curso, Usuario, AsistenciaEstado } from "../models/index.js";
 
-
-
-// Crear asistencia
+// Crear asistencia (lote por curso)
 export const tomarAsistenciaCurso = async (req, res) => {
   const { id_curso, fecha, items } = req.body;
-  const usuarioId = req.user?.id; // opcional si tenés auth
+  const usuarioId = req.user?.id; // opcional si usás auth
 
   if (!id_curso || !fecha || !Array.isArray(items)) {
     return res.status(400).json({ error: "Datos inválidos" });
   }
 
   try {
-    // Validar alumnos del curso
-    const alumnosCurso = await Alumno.findAll({
-      where: { id_curso },
-      attributes: ["id_alumno"],
-    });
-
-    const setValidos = new Set(alumnosCurso.map(a => a.id_alumno));
-    const registros = items
-      .filter(i => setValidos.has(i.id_alumno))
-      .map(i => ({
-        id_alumno: i.id_alumno,
-        fecha,
-        id_estado: i.id_estado,
-        observaciones: i.observaciones || null,
-        registrado_por: usuarioId || null,
-      }));
-
-    if (registros.length === 0) {
-      return res.status(400).json({ error: "No hay alumnos válidos en el curso" });
-    }
+    const registros = items.map((i) => ({
+      id_alumno: i.id_alumno,
+      fecha,
+      id_estado: i.id_estado,
+      observaciones: i.observaciones || null,
+      registrado_por: usuarioId || null,
+    }));
 
     await Asistencia.bulkCreate(registros, {
       updateOnDuplicate: ["id_estado", "observaciones", "registrado_por", "actualizado_el"],
@@ -45,11 +30,12 @@ export const tomarAsistenciaCurso = async (req, res) => {
   }
 };
 
-
-// 1) Todas las asistencias de un curso en el día actual
+// =========================
+// 1) Asistencias de un curso en el día actual
+// =========================
 export const obtenerAsistenciasCursoHoy = async (req, res) => {
   const { id_curso } = req.params;
-  const hoy = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  const hoy = new Date().toISOString().split("T")[0];
 
   try {
     const asistencias = await Asistencia.findAll({
@@ -57,23 +43,40 @@ export const obtenerAsistenciasCursoHoy = async (req, res) => {
         {
           model: Alumno,
           where: { id_curso },
-          include: [{ model: Curso, attributes: ["anio_escolar", "division"] }],
+          include: [
+            { model: Curso, attributes: ["anio_escolar", "division"] },
+            { model: Usuario, attributes: ["nombre_completo"] },
+          ],
         },
+        { model: AsistenciaEstado, attributes: ["descripcion"] },
       ],
       where: { fecha: hoy },
     });
 
-    res.json(asistencias);
+    const data = asistencias.map((a) => ({
+      id_asistencia: a.id_asistencia,
+      fecha: a.fecha,
+      id_estado: a.id_estado,
+      estado_nombre: a.AsistenciaEstado?.descripcion,
+      alumno_id: a.Alumno?.id_alumno,
+      alumno_nombre: a.Alumno?.Usuario?.nombre_completo,
+      curso_anio: a.Alumno?.Curso?.anio_escolar,
+      curso_division: a.Alumno?.Curso?.division,
+    }));
+
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error obteniendo asistencias del curso hoy" });
   }
 };
 
+// =========================
 // 2) Asistencias de un curso entre fechas
+// =========================
 export const obtenerAsistenciasCursoEntreFechas = async (req, res) => {
   const { id_curso } = req.params;
-  const { desde, hasta } = req.query; // formato YYYY-MM-DD
+  const { desde, hasta } = req.query;
 
   if (!desde || !hasta) {
     return res.status(400).json({ error: "Faltan fechas 'desde' y 'hasta'" });
@@ -85,24 +88,37 @@ export const obtenerAsistenciasCursoEntreFechas = async (req, res) => {
         {
           model: Alumno,
           where: { id_curso },
-          include: [{ model: Curso, attributes: ["anio_escolar", "division"] }],
+          include: [
+            { model: Curso, attributes: ["anio_escolar", "division"] },
+            { model: Usuario, attributes: ["nombre_completo"] },
+          ],
         },
+        { model: AsistenciaEstado, attributes: ["descripcion"] },
       ],
-      where: {
-        fecha: {
-          [Op.between]: [desde, hasta],
-        },
-      },
+      where: { fecha: { [Op.between]: [desde, hasta] } },
     });
 
-    res.json(asistencias);
+    const data = asistencias.map((a) => ({
+      id_asistencia: a.id_asistencia,
+      fecha: a.fecha,
+      id_estado: a.id_estado,
+      estado_nombre: a.AsistenciaEstado?.descripcion,
+      alumno_id: a.Alumno?.id_alumno,
+      alumno_nombre: a.Alumno?.Usuario?.nombre_completo,
+      curso_anio: a.Alumno?.Curso?.anio_escolar,
+      curso_division: a.Alumno?.Curso?.division,
+    }));
+
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error obteniendo asistencias del curso entre fechas" });
   }
 };
 
+// =========================
 // 3) Asistencias de un alumno entre fechas
+// =========================
 export const obtenerAsistenciasAlumnoEntreFechas = async (req, res) => {
   const { id_alumno } = req.params;
   const { desde, hasta } = req.query;
@@ -117,19 +133,52 @@ export const obtenerAsistenciasAlumnoEntreFechas = async (req, res) => {
         {
           model: Alumno,
           where: { id_alumno },
-          include: [{ model: Curso, attributes: ["anio_escolar", "division"] }],
+          include: [
+            { model: Curso, attributes: ["anio_escolar", "division"] },
+            { model: Usuario, attributes: ["nombre_completo"] },
+          ],
         },
+        { model: AsistenciaEstado, attributes: ["descripcion"] },
       ],
-      where: {
-        fecha: {
-          [Op.between]: [desde, hasta],
-        },
-      },
+      where: { fecha: { [Op.between]: [desde, hasta] } },
     });
 
-    res.json(asistencias);
+    const data = asistencias.map((a) => ({
+      id_asistencia: a.id_asistencia,
+      fecha: a.fecha,
+      id_estado: a.id_estado,
+      estado_nombre: a.AsistenciaEstado?.descripcion,
+      alumno_id: a.Alumno?.id_alumno,
+      alumno_nombre: a.Alumno?.Usuario?.nombre_completo,
+      curso_anio: a.Alumno?.Curso?.anio_escolar,
+      curso_division: a.Alumno?.Curso?.division,
+    }));
+
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error obteniendo asistencias del alumno entre fechas" });
+  }
+};
+
+
+// DELETE /api/asistencias/curso/:id_curso?fecha=YYYY-MM-DD
+export const eliminarAsistenciasCurso = async (req, res) => {
+  const { id_curso } = req.params;
+  const { fecha } = req.query;
+  if (!fecha) {
+    return res.status(400).json({ error: "Debe especificar la fecha" });
+  }
+
+  try {
+    const eliminados = await Asistencia.destroy({
+      where: { fecha },
+      include: [{ model: Alumno, where: { id_curso } }],
+    });
+
+    res.json({ ok: true, eliminados });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error eliminando asistencias del curso" });
   }
 };
