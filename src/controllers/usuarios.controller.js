@@ -2,21 +2,23 @@ import * as usuarioService from '../services/usuario.service.js';
 
 export const getUsuarios = async (req, res, next) => {
     try{
-        const { page = 1, perPage = 10 } = req.query;
+        const { page = 1, perPage = 10, nombre_completo, id_rol } = req.query;
         const limit = parseInt(perPage);
         const offset = (parseInt(page) - 1) * limit;
 
-        const { users, total } = await usuarioService.getUsuarios(limit, offset);
+        const { users, total } = await usuarioService.getUsuarios(limit, offset, { nombre_completo, id_rol });
 
-        res.json({ 
-            data: users,
-            meta: {
-                total,
-                page: parseInt(page),
-                perPage: limit,
-                totalPages: Math.ceil(total / limit)
-            }
-        });
+        res.status(200).json({ data: users, total });
+    }catch(error){
+        next(error);
+    }
+}
+
+export const getUsuario = async (req, res, next) => {
+    try{
+        const { id_usuario } = req.params;
+        const user = await usuarioService.getUsuario(id_usuario);
+        res.status(200).json(user);
     }catch(error){
         next(error);
     }

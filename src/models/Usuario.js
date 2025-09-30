@@ -14,6 +14,7 @@ export const Usuario = sequelize.define("Usuario", {
   },
   numero_documento: {
     type: DataTypes.STRING,
+    allowNull: false,
     unique: true
   },
   email: {
@@ -27,19 +28,67 @@ export const Usuario = sequelize.define("Usuario", {
   },
   telefono: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    get() {
+      const rawValue = this.getDataValue('telefono');
+      return rawValue ? rawValue : 'No proporcionado';
+    },
+    set(value) {
+      const restrictedValues = ["No proporcionado"];
+      if (restrictedValues.includes(value)){
+        this.setDataValue('telefono', null);
+      }else{
+        this.setDataValue('telefono', value);
+      }
+    }
   },
   direccion: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    get() {
+      const rawValue = this.getDataValue('direccion');
+      return rawValue ? rawValue : 'No proporcionado';
+    },
+    set(value) {
+      const restrictedValues = ["No proporcionado"];
+      if (restrictedValues.includes(value)){
+        this.setDataValue('direccion', null);
+      }else{
+        this.setDataValue('direccion', value);
+      }
+    },
   },
   fecha_nacimiento: {
     type: DataTypes.DATE,
-    allowNull: true
+    allowNull: true,
+    get() {
+      const rawValue = this.getDataValue('fecha_nacimiento');
+      return rawValue ? rawValue : 'No proporcionado';
+    },
+    set(value) {
+      const restrictedValues = ["No proporcionado"];
+      if (restrictedValues.includes(value)){
+        this.setDataValue('fecha_nacimiento', null);
+      }else{
+        this.setDataValue('fecha_nacimiento', value);
+      }
+    }
   },
   genero: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    get() {
+      const rawValue = this.getDataValue('genero');
+      return rawValue ? rawValue : 'No proporcionado';
+    },
+    set(value) {
+      const restrictedValues = ["No proporcionado"];
+      if (restrictedValues.includes(value)){
+        this.setDataValue('genero', null);
+      }else{
+        this.setDataValue('genero', value);
+      }
+    }
   }
 }, {
   tableName: "usuarios",
