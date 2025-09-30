@@ -8,16 +8,18 @@ import { AsistenciaEstado } from "./AsistenciaEstado.js";
 
 // Alumno - usuario
 Alumno.belongsTo(Usuario, { foreignKey: "id_usuario" });
-Usuario.hasOne(Alumno, { foreignKey: "id_usuario" });
-
+// Alumno - asistencia
+Alumno.hasMany(Asistencia, { foreignKey: "id_alumno" });
 // Alumno - curso
 Alumno.belongsTo(Curso, { foreignKey: "id_curso" });
+
+
+Usuario.hasOne(Alumno, { foreignKey: "id_usuario" });
+// Alumno - curso
 Curso.hasMany(Alumno, { foreignKey: "id_curso" });
 
 // asistencia - alumno
 Asistencia.belongsTo(Alumno, { foreignKey: "id_alumno" });
-// asistencia - curso
-Asistencia.belongsTo(Curso, { foreignKey: "id_curso" });
 // asistencia - usuario (quien registró la asistencia)
 Asistencia.belongsTo(Usuario, { foreignKey: "registrado_por" });
 // asistencia - estado

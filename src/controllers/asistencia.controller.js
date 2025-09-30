@@ -1,90 +1,135 @@
-import { Asistencia, Alumno, Curso, Usuario, AsistenciaEstado } from "../models/index.js";
+import { Op } from "sequelize";
+import { Asistencia, Alumno, Curso} from "../models/index.js";
 
 
 
 // Crear asistencia
-export const crearAsistencia = async (req, res) => {
+export const tomarAsistenciaCurso = async (req, res) => {
+  const { id_curso, fecha, items } = req.body;
+  const usuarioId = req.user?.id; // opcional si tenés auth
+
+  if (!id_curso || !fecha || !Array.isArray(items)) {
+    return res.status(400).json({ error: "Datos inválidos" });
+  }
+
   try {
-    const nuevaAsistencia = await Asistencia.create(req.body);
-    res.status(201).json(nuevaAsistencia);
-  } catch (error) {
-    res.status(500).json({ error: "Error al crear asistencia", detalle: error.message });
+    // Validar alumnos del curso
+    const alumnosCurso = await Alumno.findAll({
+      where: { id_curso },
+      attributes: ["id_alumno"],
+    });
+
+    const setValidos = new Set(alumnosCurso.map(a => a.id_alumno));
+    const registros = items
+      .filter(i => setValidos.has(i.id_alumno))
+      .map(i => ({
+        id_alumno: i.id_alumno,
+        fecha,
+        id_estado: i.id_estado,
+        observaciones: i.observaciones || null,
+        registrado_por: usuarioId || null,
+      }));
+
+    if (registros.length === 0) {
+      return res.status(400).json({ error: "No hay alumnos válidos en el curso" });
+    }
+
+    await Asistencia.bulkCreate(registros, {
+      updateOnDuplicate: ["id_estado", "observaciones", "registrado_por", "actualizado_el"],
+    });
+
+    res.json({ ok: true, total: registros.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error registrando asistencia" });
   }
 };
 
-// Obtener todas las asistencias
-export const obtenerAsistencias = async (req, res) => {
+
+// 1) Todas las asistencias de un curso en el día actual
+export const obtenerAsistenciasCursoHoy = async (req, res) => {
+  const { id_curso } = req.params;
+  const hoy = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
   try {
     const asistencias = await Asistencia.findAll({
-      include: [Alumno, Curso, Usuario, AsistenciaEstado]
+      include: [
+        {
+          model: Alumno,
+          where: { id_curso },
+          include: [{ model: Curso, attributes: ["anio_escolar", "division"] }],
+        },
+      ],
+      where: { fecha: hoy },
     });
+
     res.json(asistencias);
-  } catch (error) {
-    res.status(500).json({ error: "Error al obtener asistencias", detalle: error.message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error obteniendo asistencias del curso hoy" });
   }
 };
 
-// Obtener una asistencia por ID
-export const obtenerAsistenciaPorId = async (req, res) => {
-  try {
-    const asistencia = await Asistencia.findByPk(req.params.id, {
-      include: [Alumno, Curso, Usuario, AsistenciaEstado]
-    });
-    if (!asistencia) return res.status(404).json({ error: "Asistencia no encontrada" });
-    res.json(asistencia);
-  } catch (error) {
-    res.status(500).json({ error: "Error al obtener asistencia", detalle: error.message });
+// 2) Asistencias de un curso entre fechas
+export const obtenerAsistenciasCursoEntreFechas = async (req, res) => {
+  const { id_curso } = req.params;
+  const { desde, hasta } = req.query; // formato YYYY-MM-DD
+
+  if (!desde || !hasta) {
+    return res.status(400).json({ error: "Faltan fechas 'desde' y 'hasta'" });
   }
-};
 
-// Actualizar asistencia
-export const actualizarAsistencia = async (req, res) => {
-  try {
-    const asistencia = await Asistencia.findByPk(req.params.id);
-    if (!asistencia) return res.status(404).json({ error: "Asistencia no encontrada" });
-
-    await asistencia.update(req.body);
-    res.json(asistencia);
-  } catch (error) {
-    res.status(500).json({ error: "Error al actualizar asistencia", detalle: error.message });
-  }
-};
-
-// Eliminar asistencia
-export const eliminarAsistencia = async (req, res) => {
-  try {
-    const asistencia = await Asistencia.findByPk(req.params.id);
-    if (!asistencia) return res.status(404).json({ error: "Asistencia no encontrada" });
-
-    await asistencia.destroy();
-    res.json({ mensaje: "Asistencia eliminada" });
-  } catch (error) {
-    res.status(500).json({ error: "Error al eliminar asistencia", detalle: error.message });
-  }
-};
-
-// Obtener asistencias por curso
-export const obtenerAsistenciasPorCurso = async (req, res) => {
   try {
     const asistencias = await Asistencia.findAll({
-      where: { id_curso: req.params.id_curso },
-      include: [Alumno, Curso, Usuario, AsistenciaEstado]
+      include: [
+        {
+          model: Alumno,
+          where: { id_curso },
+          include: [{ model: Curso, attributes: ["anio_escolar", "division"] }],
+        },
+      ],
+      where: {
+        fecha: {
+          [Op.between]: [desde, hasta],
+        },
+      },
     });
+
     res.json(asistencias);
-  } catch (error) {
-    res.status(500).json({ error: "Error al obtener asistencias por curso", detalle: error.message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error obteniendo asistencias del curso entre fechas" });
   }
 };
 
-// Obtener asistencias por alumno
-export const obtenerAsistenciasPorAlumno = async (req, res) => {
+// 3) Asistencias de un alumno entre fechas
+export const obtenerAsistenciasAlumnoEntreFechas = async (req, res) => {
+  const { id_alumno } = req.params;
+  const { desde, hasta } = req.query;
+
+  if (!desde || !hasta) {
+    return res.status(400).json({ error: "Faltan fechas 'desde' y 'hasta'" });
+  }
+
   try {
     const asistencias = await Asistencia.findAll({
-      where: { id_alumno: req.params.id_alumno },
-      include: [Alumno, Curso, Usuario, AsistenciaEstado]
+      include: [
+        {
+          model: Alumno,
+          where: { id_alumno },
+          include: [{ model: Curso, attributes: ["anio_escolar", "division"] }],
+        },
+      ],
+      where: {
+        fecha: {
+          [Op.between]: [desde, hasta],
+        },
+      },
     });
+
     res.json(asistencias);
-  } catch (error) {
-    res.status(500).json({ error: "Error al obtener asistencias por alumno", detalle: error.message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error obteniendo asistencias del alumno entre fechas" });
   }
 };

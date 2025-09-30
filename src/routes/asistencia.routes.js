@@ -1,25 +1,20 @@
+// routes/asistencia.routes.js
 import express from "express";
 import {
-  crearAsistencia,
-  obtenerAsistencias,
-  obtenerAsistenciaPorId,
-  actualizarAsistencia,
-  eliminarAsistencia,
-  obtenerAsistenciasPorCurso,
-  obtenerAsistenciasPorAlumno
+  tomarAsistenciaCurso,
+  obtenerAsistenciasCursoHoy,
+  obtenerAsistenciasCursoEntreFechas,
+  obtenerAsistenciasAlumnoEntreFechas,
 } from "../controllers/asistencia.controller.js";
 
 const router = express.Router();
 
-// CRUD
-router.post("/", crearAsistencia);
-router.get("/", obtenerAsistencias);
-router.get("/:id", obtenerAsistenciaPorId);
-router.put("/:id", actualizarAsistencia);
-router.delete("/:id", eliminarAsistencia);
+// Registro en lote
+router.post("/curso", tomarAsistenciaCurso);
 
-// Extra
-router.get("/curso/:id_curso", obtenerAsistenciasPorCurso);
-router.get("/alumno/:id_alumno", obtenerAsistenciasPorAlumno);
+// Consultas
+router.get("/curso/:id_curso/hoy", obtenerAsistenciasCursoHoy);
+router.get("/curso/:id_curso", obtenerAsistenciasCursoEntreFechas);
+router.get("/alumno/:id_alumno", obtenerAsistenciasAlumnoEntreFechas);
 
 export default router;
