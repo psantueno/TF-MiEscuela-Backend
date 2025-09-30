@@ -14,6 +14,7 @@ import asistenciaEstadoRoutes from "./routes/asistenciaEstado.routes.js";
 import usuarioRoutes from "./routes/usuario.routes.js";
 import rolRoutes from "./routes/roles.routes.js";
 import cursoRoutes from "./routes/curso.routes.js";
+import alumnoRoutes from "./routes/alumno.routes.js"
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use("/api/asistencia-estados", asistenciaEstadoRoutes);
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/roles", rolRoutes);
 app.use("/api/cursos", cursoRoutes);
+app.use("/api/alumnos", alumnoRoutes )
 
 // ──────────────── Manejo de errores ────────────────
 app.use(errorHandler);

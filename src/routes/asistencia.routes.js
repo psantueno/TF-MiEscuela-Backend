@@ -5,6 +5,7 @@ import {
   obtenerAsistenciasCursoHoy,
   obtenerAsistenciasCursoEntreFechas,
   obtenerAsistenciasAlumnoEntreFechas,
+  eliminarAsistenciasCurso,
 } from "../controllers/asistencia.controller.js";
 
 const router = express.Router();
@@ -16,5 +17,7 @@ router.post("/curso", tomarAsistenciaCurso);
 router.get("/curso/:id_curso/hoy", obtenerAsistenciasCursoHoy);
 router.get("/curso/:id_curso", obtenerAsistenciasCursoEntreFechas);
 router.get("/alumno/:id_alumno", obtenerAsistenciasAlumnoEntreFechas);
+router.delete("/curso/:id_curso", eliminarAsistenciasCurso);
+
 
 export default router;
