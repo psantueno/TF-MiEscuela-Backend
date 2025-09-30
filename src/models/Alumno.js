@@ -11,11 +11,7 @@ export const Alumno = sequelize.define("Alumno", {
     type: DataTypes.INTEGER,
     allowNull: true
   },
-  id_escuela: {
-    type: DataTypes.INTEGER,
-    allowNull: true
-  },
-  id_curso: {   // 🔹 agregado para reflejar la FK hacia cursos
+  id_curso: {   // 🔹 FK hacia cursos
     type: DataTypes.INTEGER,
     allowNull: false
   },
