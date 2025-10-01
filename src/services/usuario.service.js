@@ -12,55 +12,62 @@ import { sequelize } from '../config/database.js';
 import { Op } from 'sequelize';
 import bcrypt from 'bcrypt';
 
-const createUserInRoleTable = async (roleId, userId, transaction) => {
+const createUserInRoleTable = async (roleId, userId, data) => {
+    console.log("Creating user in role table:", { roleId, userId, data });
+    if(!data || !data.legajo){
+        const error = new Error("El legajo es obligatorio");
+        error.statusCode = 400;
+        throw error;
+    }
     switch(roleId){
         case 1: // Admin
-            await Administrador.create({ id_usuario: userId }, { transaction: transaction });
+            await Administrador.create({ id_usuario: userId });
             break;
         case 2: // Director
-            await Director.create({ id_usuario: userId }, { transaction: transaction });
+            await Director.create({ id_usuario: userId });
             break;
         case 3: // Docente
-            await Docente.create({ id_usuario: userId }, { transaction: transaction });
+            await Docente.create({ id_usuario: userId, legajo: data.legajo });
             break;
         case 4: // Auxiliar
-            await Auxiliar.create({ id_usuario: userId }, { transaction: transaction });
+            await Auxiliar.create({ id_usuario: userId });
             break;
         case 5: // Asesor Pedagógico
-            await AsesorPedagogico.create({ id_usuario: userId }, { transaction: transaction });
+            await AsesorPedagogico.create({ id_usuario: userId });
             break;
         case 6: // Alumno
-            await Alumno.create({ id_usuario: userId }, { transaction: transaction });
+            await Alumno.create({ id_usuario: userId, legajo: data.legajo });
             break;
         case 7: // Tutor
-            await Tutor.create({ id_usuario: userId }, { transaction: transaction });
+            await Tutor.create({ id_usuario: userId });
             break;
     }
 }
 
-const deleteUserInRoleTable = async (oldRole, userId, transaction) => {
+const deleteUserInRoleTable = async (oldRole, userId) => {
+    console.log("Deleting user in role table:", { oldRole, userId });
     switch(oldRole){
         case 1: // Admin
-            await Administrador.destroy({ where: { id_usuario: userId } }, { transaction: transaction });
+            await Administrador.destroy({ where: { id_usuario: userId } });
             break;
         case 2: // Director
-            await Director.destroy({ where: { id_usuario: userId } }, { transaction: transaction });
+            await Director.destroy({ where: { id_usuario: userId } });
             break;
         case 3: // Docente
-            await Docente.destroy({ where: { id_usuario: userId } }, { transaction: transaction });
+            await Docente.destroy({ where: { id_usuario: userId } });
             break;
         case 4: // Auxiliar
-            await Auxiliar.destroy({ where: { id_usuario: userId } }, { transaction: transaction });
+            await Auxiliar.destroy({ where: { id_usuario: userId } });
             break;
         case 5: // Asesor Pedagógico
-            await AsesorPedagogico.destroy({ where: { id_usuario: userId } }, { transaction: transaction });
+            await AsesorPedagogico.destroy({ where: { id_usuario: userId } });
             break;
         case 6: // Alumno
-            await Alumno.destroy({ where: { id_usuario: userId } }, { transaction: transaction });
+            await Alumno.destroy({ where: { id_usuario: userId } });
             break;
         case 7: // Tutor
-            await Tutor.destroy({ where: { id_usuario: userId } }, { transaction: transaction });
-                break;
+            await Tutor.destroy({ where: { id_usuario: userId } });
+            break;
     }
 }
 
@@ -107,6 +114,17 @@ export const getUsuario = async (id_usuario) => {
         ],
         attributes: { exclude: ["contrasenia", "creado_el", "actualizado_el"] }
     });
+
+    const isAlumno = await Alumno.findOne({ where: { id_usuario } });
+    if(isAlumno){
+        user.dataValues.legajo = isAlumno.legajo;
+    }
+
+    const isDocente = await Docente.findOne({ where: { id_usuario } });
+    if(isDocente){
+        user.dataValues.legajo = isDocente.legajo;
+    }
+
     return user;
 }
 
@@ -114,7 +132,6 @@ export const createUsuario = async (data) => {
     const emailExists = await Usuario.findOne({ where: 
         { email: data.email }
     });
-
     if(emailExists){
         const error = new Error("El email ya está en uso");
         error.statusCode = 400;
@@ -158,9 +175,28 @@ export const createUsuario = async (data) => {
         id_rol: rol.id_rol
     }, { transaction: t });
 
-    await createUserInRoleTable(rol.id_rol, newUser.id_usuario, t);
+    /*try{
+        await createUserInRoleTable(rol.id_rol, newUser.id_usuario, data);
+    }catch(error){
+        await UsuarioRol.destroy({ where: { id_usuario: newUser.id_usuario } }, { transaction: t });
+        await newUser.destroy({ transaction: t });
+        const err = new Error(error.message);
+        err.statusCode = error.statusCode || 500;
+        throw err;
+    }*/
+    //await createUserInRoleTable(rol.id_rol, newUser.id_usuario, data);
 
     await t.commit();
+
+    try{
+        await createUserInRoleTable(rol.id_rol, newUser.id_usuario, data);
+    }catch(error){
+        await UsuarioRol.destroy({ where: { id_usuario: newUser.id_usuario } });
+        await newUser.destroy();
+        const err = new Error(error.message);
+        err.statusCode = error.statusCode || 500;
+        throw err;
+    }
 
     const newUserWithRoles = await Usuario.findByPk(newUser.id_usuario, 
         { 
@@ -182,7 +218,6 @@ export const updateUsuario = async (id_usuario, data) => {
     const emailExists = await Usuario.findOne({ where: 
         { email: data.email, id_usuario: { [Op.ne]: id_usuario } }
     });
-
     if(emailExists){
         const error = new Error("El email ya está en uso");
         error.statusCode = 400;
@@ -237,18 +272,24 @@ export const updateUsuario = async (id_usuario, data) => {
 
     const currentRole = await UsuarioRol.findOne({ where: { id_usuario: user.id_usuario } });
 
-    await UsuarioRol.destroy({ where: { id_usuario: user.id_usuario } }, { transaction: t });
+    if(!currentRole || currentRole.id_rol !== rol.id_rol){
+        try{
+            await createUserInRoleTable(rol.id_rol, user.id_usuario, data);
 
-    await UsuarioRol.create({
-        id_usuario: user.id_usuario,
-        id_rol: rol.id_rol
-    }, { transaction: t });
+            await UsuarioRol.destroy({ where: { id_usuario: user.id_usuario } }, { transaction: t });
+            await UsuarioRol.create({
+                id_usuario: user.id_usuario,
+                id_rol: rol.id_rol
+            }, { transaction: t });
 
-    console.log(user);
-    console.log(currentRole.id_rol, rol.id_rol);
-    if(currentRole.id_rol !== rol.id_rol){
-        await deleteUserInRoleTable(currentRole.id_rol, user.id_usuario, t);
-        await createUserInRoleTable(rol.id_rol, user.id_usuario, t);
+            if(currentRole){
+                await deleteUserInRoleTable(currentRole.id_rol, user.id_usuario, t);
+            }
+        }catch(error){
+            const err = new Error(error.message);
+            err.statusCode = error.statusCode || 500;
+            throw err;
+        }
     }
 
     await t.commit();
@@ -280,7 +321,7 @@ export const deleteUsuario = async (id_usuario) => {
 
     await UsuarioRol.destroy({ where: { id_usuario: user.id_usuario } }, { transaction: t });
     await user.destroy({ transaction: t });
-    await deleteUserInRoleTable(user.roles.id_rol, user.id_usuario, t);
+    //await deleteUserInRoleTable(user.roles.id_rol, user.id_usuario, t);
 
     await t.commit();
 }
