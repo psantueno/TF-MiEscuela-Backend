@@ -14,10 +14,6 @@ export const Alumno = sequelize.define("Alumno", {
   id_curso: {   // 🔹 FK hacia cursos
     type: DataTypes.INTEGER,
     allowNull: true
-  },
-  legajo: {
-    type: DataTypes.STRING,
-    unique: true
   }
 }, {
   tableName: "alumnos",

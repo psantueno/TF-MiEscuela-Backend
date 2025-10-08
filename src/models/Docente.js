@@ -7,10 +7,6 @@ export const Docente = sequelize.define("Docente", {
         primaryKey: true,
         autoIncrement: true
     },
-    legajo: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
     id_usuario: {
         type: DataTypes.INTEGER,
         allowNull: false,

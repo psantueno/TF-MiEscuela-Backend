@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { Usuario } from "../../models/Usuario.js";
+import { Rol } from '../../models/Rol.js';
+import { Op } from 'sequelize';
+import { ValidationError } from "../../utils/validationError.util.js";
 import { errorHandler } from "../../utils/validatorErrorHandler.util.js";
 
 const getUsuariosSchema = z.object({
@@ -9,6 +13,7 @@ const getUsuariosSchema = z.object({
 const createUsuarioSchema = z.object({
     nombre_completo: z.string("El nombre completo debe ser una cadena de caracteres").min(1, "El nombre completo es obligatorio"),
     numero_documento: z.string("El número de documento debe ser una cadena de caracteres").min(1, "El número de documento es obligatorio"),
+    legajo: z.string("El legajo debe ser una cadena de caracteres").min(1, "El legajo es obligatorio"),
     email: z.string("El email debe ser una cadena de caracteres").regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "El formato del email no es válido"),
     contrasenia: z.string("La contraseña debe ser una cadena de caracteres").min(8, "La contraseña debe tener al menos 8 caracteres"),
     telefono: z.string("El teléfono debe ser una cadena de caracteres").optional(),
@@ -21,6 +26,7 @@ const createUsuarioSchema = z.object({
 const updateUsuarioSchema = z.object({
     nombre_completo: z.string("El nombre completo debe ser una cadena de caracteres").min(1, "El nombre completo es obligatorio"),
     numero_documento: z.string("El número de documento debe ser una cadena de caracteres").min(1, "El número de documento es obligatorio"),
+    legajo: z.string("El legajo debe ser una cadena de caracteres").min(1, "El legajo es obligatorio"),
     email: z.string("El email debe ser una cadena de caracteres").regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "El formato del email no es válido"),
     telefono: z.string("El teléfono debe ser una cadena de caracteres").optional(),
     direccion: z.string("La dirección debe ser una cadena de caracteres").optional(),
@@ -32,6 +38,37 @@ const updateUsuarioSchema = z.object({
 const deleteUsuarioSchema = z.object({
     id_usuario: z.number("El ID del usuario debe ser un número").int().min(1, "El ID del usuario es obligatorio")
 })
+
+const verifyEmailUnique = async (email, excludeUserId = null) => {
+    const whereClause = { email };
+    if (excludeUserId) whereClause.id_usuario = { [Op.ne]: excludeUserId };
+    const user = await Usuario.findOne({ where: whereClause });
+    return !!user;
+}
+
+const verifyDocumentUnique = async (numero_documento, excludeUserId = null) => {
+    const whereClause = { numero_documento };
+    if (excludeUserId) whereClause.id_usuario = { [Op.ne]: excludeUserId };
+    const user = await Usuario.findOne({ where: whereClause });
+    return !!user;
+}
+
+const verifyRecordNumberUnique = async (legajo, excludeUserId = null) => {
+    const whereClause = { legajo };
+    if (excludeUserId) whereClause.id_usuario = { [Op.ne]: excludeUserId };
+    const user = await Usuario.findOne({ where: whereClause });
+    return !!user;
+}
+
+const verifyUserExists = async (id_usuario) => {
+    const user = await Usuario.findByPk(id_usuario);
+    return !!user;
+}
+
+const verifyRoleExists = async (id_rol) => {
+    const role = await Rol.findByPk(id_rol);
+    return !!role;
+}
 
 export const validateGetUsuarios = (req, res, next) => {
     try{
@@ -46,11 +83,23 @@ export const validateGetUsuarios = (req, res, next) => {
     }
 }
 
-export const validateCreateUsuario = (req, res, next) => {
+export const validateCreateUsuario = async (req, res, next) => { 
     try{
         if(!req.body) throw new Error("No se recibieron datos");
 
         createUsuarioSchema.parse(req.body);
+
+        const { email, numero_documento, legajo, id_rol } = req.body;
+        const emailExists = await verifyEmailUnique(email);
+        const documentExists = await verifyDocumentUnique(numero_documento);
+        const recordNumberExists = await verifyRecordNumberUnique(legajo);
+        const roleExists = await verifyRoleExists(id_rol);
+
+        if(emailExists) throw new ValidationError("El email ya está en uso");
+        if(documentExists) throw new ValidationError("El número de documento ya está en uso");
+        if(recordNumberExists) throw new ValidationError("El legajo ya está en uso");
+        if(!roleExists) throw new ValidationError("El rol no existe", 404);
+
         next();
     }catch(error){
         const err = errorHandler(error, z);
@@ -58,11 +107,25 @@ export const validateCreateUsuario = (req, res, next) => {
     }
 };
 
-export const validateUpdateUsuario = (req, res, next) => {
+export const validateUpdateUsuario = async (req, res, next) => {
     try{
         if(!req.body) throw new Error("No se recibieron datos");
 
         updateUsuarioSchema.parse(req.body);
+
+        const { email, numero_documento, legajo, id_rol, id_usuario } = req.body;
+        const userExists = await verifyUserExists(id_usuario);
+        const emailExists = await verifyEmailUnique(email, id_usuario);
+        const documentExists = await verifyDocumentUnique(numero_documento, id_usuario);
+        const recordNumberExists = await verifyRecordNumberUnique(legajo, id_usuario);
+        const roleExists = await verifyRoleExists(id_rol);
+
+        if(!userExists) throw new ValidationError("El usuario no existe", 404);
+        if(emailExists) throw new ValidationError("El email ya está en uso");
+        if(documentExists) throw new ValidationError("El número de documento ya está en uso");
+        if(recordNumberExists) throw new ValidationError("El legajo ya está en uso");
+        if(!roleExists) throw new ValidationError("El rol no existe", 404);
+
         next();
     }catch(error){
         const err = errorHandler(error, z);
@@ -77,6 +140,10 @@ export const validateDeleteUsuario = (req, res, next) => {
         deleteUsuarioSchema.parse({
             id_usuario: req.params.id_usuario ? parseInt(req.params.id_usuario) : NaN
         });
+
+        const { id_usuario } = req.params;
+        if(!id_usuario) throw new ValidationError("El ID del usuario es obligatorio");
+
         next();
     }catch(error){
         const err = errorHandler(error, z);

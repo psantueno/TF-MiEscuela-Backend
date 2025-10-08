@@ -17,6 +17,10 @@ export const Usuario = sequelize.define("Usuario", {
     allowNull: false,
     unique: true
   },
+  legajo: {
+    type: DataTypes.STRING,
+    unique: true,    
+  },
   email: {
     type: DataTypes.STRING,
     allowNull: false,
