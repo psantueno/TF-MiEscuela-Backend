@@ -2,7 +2,7 @@
 import express from "express";
 import {
   tomarAsistenciaCurso,
-  obtenerAsistenciasCursoHoy,
+  obtenerAsistenciasCursoFecha,
   obtenerAsistenciasCursoEntreFechas,
   obtenerAsistenciasAlumnoEntreFechas,
   eliminarAsistenciasCurso,
@@ -14,7 +14,7 @@ const router = express.Router();
 router.post("/curso", tomarAsistenciaCurso);
 
 // Consultas
-router.get("/curso/:id_curso/hoy", obtenerAsistenciasCursoHoy);
+router.get("/curso/:id_curso/recientes", obtenerAsistenciasCursoFecha);
 router.get("/curso/:id_curso", obtenerAsistenciasCursoEntreFechas);
 router.get("/alumno/:id_alumno", obtenerAsistenciasAlumnoEntreFechas);
 router.delete("/curso/:id_curso", eliminarAsistenciasCurso);

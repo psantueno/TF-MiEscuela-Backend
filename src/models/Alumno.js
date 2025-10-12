@@ -14,8 +14,8 @@ export const Alumno = sequelize.define("Alumno", {
   id_curso: {   // 🔹 FK hacia cursos
     type: DataTypes.INTEGER,
     allowNull: true
-  }
-}, {
+  }}, 
+  {
   tableName: "alumnos",
   timestamps: true,
   createdAt: "creado_el",
