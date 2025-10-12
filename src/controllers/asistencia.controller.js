@@ -31,11 +31,13 @@ export const tomarAsistenciaCurso = async (req, res) => {
 };
 
 // =========================
-// 1) Asistencias de un curso en el día actual
+// 1) Asistencias de un curso en una fecha determinada
 // =========================
-export const obtenerAsistenciasCursoHoy = async (req, res) => {
+// controllers/asistencia.controller.js
+export const obtenerAsistenciasCursoFecha = async (req, res) => {
   const { id_curso } = req.params;
-  const hoy = new Date().toISOString().split("T")[0];
+  const { fecha } = req.query;                        // <-- tomar query param
+  const fechaConsulta = fecha || new Date().toISOString().split("T")[0];
 
   try {
     const asistencias = await Asistencia.findAll({
@@ -50,7 +52,7 @@ export const obtenerAsistenciasCursoHoy = async (req, res) => {
         },
         { model: AsistenciaEstado, attributes: ["descripcion"] },
       ],
-      where: { fecha: hoy },
+      where: { fecha: fechaConsulta },                // <-- usar la fecha pedida
     });
 
     const data = asistencias.map((a) => ({
@@ -67,7 +69,7 @@ export const obtenerAsistenciasCursoHoy = async (req, res) => {
     res.json(data);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error obteniendo asistencias del curso hoy" });
+    res.status(500).json({ error: "Error obteniendo asistencias del curso" });
   }
 };
 
@@ -166,14 +168,31 @@ export const obtenerAsistenciasAlumnoEntreFechas = async (req, res) => {
 export const eliminarAsistenciasCurso = async (req, res) => {
   const { id_curso } = req.params;
   const { fecha } = req.query;
+
   if (!fecha) {
     return res.status(400).json({ error: "Debe especificar la fecha" });
   }
 
   try {
+    // 1️⃣ Buscar los alumnos del curso
+    const alumnos = await Alumno.findAll({
+      where: { id_curso },
+      attributes: ["id_alumno"],
+    });
+
+    if (!alumnos.length) {
+      return res.status(404).json({ error: "No hay alumnos en este curso" });
+    }
+
+    // 2️⃣ Extraer sus IDs
+    const idsAlumnos = alumnos.map((a) => a.id_alumno);
+
+    // 3️⃣ Eliminar asistencias de esos alumnos en la fecha indicada
     const eliminados = await Asistencia.destroy({
-      where: { fecha },
-      include: [{ model: Alumno, where: { id_curso } }],
+      where: {
+        id_alumno: idsAlumnos,
+        fecha,
+      },
     });
 
     res.json({ ok: true, eliminados });
