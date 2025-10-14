@@ -46,8 +46,8 @@ export const obtenerAsistenciasCursoFecha = async (req, res) => {
           model: Alumno,
           where: { id_curso },
           include: [
-            { model: Curso, attributes: ["anio_escolar", "division"] },
-            { model: Usuario, attributes: ["nombre_completo"] },
+            { model: Curso, attributes: ["anio_escolar", "division"], as: 'curso' },
+            { model: Usuario, attributes: ["nombre_completo"], as: 'usuario' },
           ],
         },
         { model: AsistenciaEstado, attributes: ["descripcion"] },
@@ -61,9 +61,9 @@ export const obtenerAsistenciasCursoFecha = async (req, res) => {
       id_estado: a.id_estado,
       estado_nombre: a.AsistenciaEstado?.descripcion,
       alumno_id: a.Alumno?.id_alumno,
-      alumno_nombre: a.Alumno?.Usuario?.nombre_completo,
-      curso_anio: a.Alumno?.Curso?.anio_escolar,
-      curso_division: a.Alumno?.Curso?.division,
+      alumno_nombre: a.Alumno?.usuario?.nombre_completo,
+      curso_anio: a.Alumno?.curso?.anio_escolar,
+      curso_division: a.Alumno?.curso?.division,
     }));
 
     res.json(data);
@@ -91,8 +91,8 @@ export const obtenerAsistenciasCursoEntreFechas = async (req, res) => {
           model: Alumno,
           where: { id_curso },
           include: [
-            { model: Curso, attributes: ["anio_escolar", "division"] },
-            { model: Usuario, attributes: ["nombre_completo"] },
+            { model: Curso, attributes: ["anio_escolar", "division"], as: 'curso' },
+            { model: Usuario, attributes: ["nombre_completo"], as: 'usuario' },
           ],
         },
         { model: AsistenciaEstado, attributes: ["descripcion"] },
@@ -106,9 +106,9 @@ export const obtenerAsistenciasCursoEntreFechas = async (req, res) => {
       id_estado: a.id_estado,
       estado_nombre: a.AsistenciaEstado?.descripcion,
       alumno_id: a.Alumno?.id_alumno,
-      alumno_nombre: a.Alumno?.Usuario?.nombre_completo,
-      curso_anio: a.Alumno?.Curso?.anio_escolar,
-      curso_division: a.Alumno?.Curso?.division,
+      alumno_nombre: a.Alumno?.usuario?.nombre_completo,
+      curso_anio: a.Alumno?.curso?.anio_escolar,
+      curso_division: a.Alumno?.curso?.division,
     }));
 
     res.json(data);
@@ -136,8 +136,8 @@ export const obtenerAsistenciasAlumnoEntreFechas = async (req, res) => {
           model: Alumno,
           where: { id_alumno },
           include: [
-            { model: Curso, attributes: ["anio_escolar", "division"] },
-            { model: Usuario, attributes: ["nombre_completo"] },
+            { model: Curso, attributes: ["anio_escolar", "division"], as: 'curso' },
+            { model: Usuario, attributes: ["nombre_completo"], as: 'usuario' },
           ],
         },
         { model: AsistenciaEstado, attributes: ["descripcion"] },
