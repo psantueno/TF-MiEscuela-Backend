@@ -2,9 +2,20 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/jwt.util.js';
 import { Usuario } from '../models/Usuario.js';
+import { Rol } from '../models/Rol.js';
 
 export const login = async (email, password) => {
-    const user = await Usuario.findOne({ where: { email } });
+    const user = await Usuario.findOne({
+        where: { email },
+        include: [
+            {
+                model: Rol,
+                as: 'roles',
+                through: { attributes: [] },
+                attributes: ['id_rol', 'nombre_rol']
+            }
+        ]
+    });
 
     const isValidPassword = user ? await bcrypt.compare(password, user.contrasenia) : false;
     
@@ -14,13 +25,22 @@ export const login = async (email, password) => {
         throw error;
     }
 
-    user.rol = 'Estudiante'; // Rol de prueba
-    user.notificaciones = 3; // Notificaciones de prueba
-    const csrf_token = crypto.randomBytes(32).toString('hex');
-    const access_token = generateAccessToken(user);
-    const refresh_token = generateRefreshToken(user);
+    const rol = Array.isArray(user.roles) && user.roles.length > 0 ? user.roles[0].nombre_rol : null;
+    const notificaciones = 0; // placeholder hasta implementar notificaciones reales
 
-    return { access_token, refresh_token, csrf_token, user: { nombre_completo: user.nombre_completo, email: user.email, rol: user.rol, notificaciones: user.notificaciones } };
+    const payload = {
+        id_usuario: user.id_usuario,
+        nombre_completo: user.nombre_completo,
+        email: user.email,
+        rol,
+        notificaciones
+    };
+
+    const csrf_token = crypto.randomBytes(32).toString('hex');
+    const access_token = generateAccessToken(payload);
+    const refresh_token = generateRefreshToken(payload);
+
+    return { access_token, refresh_token, csrf_token, user: { nombre_completo: user.nombre_completo, email: user.email, rol, notificaciones } };
 }
 
 export const refreshToken = async (refreshToken) => {
@@ -34,3 +54,4 @@ export const refreshToken = async (refreshToken) => {
         throw error;
     }
 }
+
