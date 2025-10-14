@@ -128,15 +128,7 @@ export const createUsuario = async (data) => {
             genero: data.genero ? data.genero : null,
             contrasenia: hashedPassword
         }, { transaction: t });
-
-        const rol = await Rol.findOne({ where: { id_rol: data.id_rol } });
-
-        await UsuarioRol.create({
-            id_usuario: newUser.id_usuario,
-            id_rol: rol.id_rol
-        }, { transaction: t });
-
-        await createUserInRoleTable(rol.id_rol, newUser.id_usuario, t);
+        // Rol assignment removed: users are created without a role from this endpoint
 
         await t.commit();
 
@@ -155,6 +147,104 @@ export const createUsuario = async (data) => {
 
         return newUserWithRoles;
     }catch(error){
+        await t.rollback();
+        throw new DatabaseError(error.message);
+    }
+}
+
+export const getUsuariosSinRol = async (limit, offset, filters = {}) => {
+    const whereClause = {};
+    if (filters.nombre_completo) whereClause.nombre_completo = { [Op.iLike]: `%${filters.nombre_completo}%` };
+
+    const usuariosConRol = await UsuarioRol.findAll({ attributes: ['id_usuario'] });
+    const idsUsuariosConRol = usuariosConRol.map(ur => ur.id_usuario);
+    if (idsUsuariosConRol.length > 0) {
+        whereClause.id_usuario = { [Op.notIn]: idsUsuariosConRol };
+    }
+
+    const { rows: users, count: total } = await Usuario.findAndCountAll({
+        limit,
+        offset,
+        order: [["id_usuario", "ASC"]],
+        include: [
+            {
+                model: Rol,
+                as: "roles",
+                through: { attributes: [] },
+                attributes: ["id_rol", "nombre_rol"]
+            },
+        ],
+        attributes: { include: ["numero_documento"], exclude: ["contrasenia", "creado_el", "actualizado_el"] },
+        where: { ...whereClause }
+    });
+
+    return { users, total };
+}
+
+export const assignRolUsuario = async (id_usuario, id_rol) => {
+    const t = await sequelize.transaction();
+    try {
+        const user = await Usuario.findByPk(id_usuario, { transaction: t });
+        const role = await Rol.findByPk(id_rol, { transaction: t });
+        if (!user) throw new DatabaseError("El usuario no existe");
+        if (!role) throw new DatabaseError("El rol no existe");
+
+        const currentRoles = await UsuarioRol.findAll({ where: { id_usuario }, transaction: t });
+
+        // Idempotencia: si ya tiene exactamente ese rol, no hacer cambios
+        if (currentRoles.length === 1 && currentRoles[0].id_rol === id_rol) {
+            await t.commit();
+            const updatedUser = await Usuario.findByPk(id_usuario, {
+                include: [{ model: Rol, as: "roles", through: { attributes: [] }, attributes: ["id_rol", "nombre_rol"] }],
+                attributes: { exclude: ["contrasenia", "creado_el", "actualizado_el"] }
+            });
+            return updatedUser;
+        }
+
+        // Limpiar roles anteriores y tablas específicas
+        if (currentRoles.length > 0) {
+            for (const cr of currentRoles) {
+                await deleteUserInRoleTable(cr.id_rol, id_usuario, t);
+            }
+            await UsuarioRol.destroy({ where: { id_usuario }, transaction: t });
+        }
+
+        // Asignar nuevo rol y crear en tabla específica
+        await UsuarioRol.create({ id_usuario, id_rol }, { transaction: t });
+        await createUserInRoleTable(id_rol, id_usuario, t);
+
+        await t.commit();
+
+        const updatedUser = await Usuario.findByPk(id_usuario, {
+            include: [{ model: Rol, as: "roles", through: { attributes: [] }, attributes: ["id_rol", "nombre_rol"] }],
+            attributes: { exclude: ["contrasenia", "creado_el", "actualizado_el"] }
+        });
+        return updatedUser;
+    } catch (error) {
+        await t.rollback();
+        throw new DatabaseError(error.message);
+    }
+}
+
+export const unassignRolUsuario = async (id_usuario) => {
+    const t = await sequelize.transaction();
+    try {
+        const user = await Usuario.findByPk(id_usuario, {
+            include: [{ model: Rol, as: "roles", through: { attributes: [] }, attributes: ["id_rol", "nombre_rol"] }],
+            transaction: t
+        });
+        if (!user) throw new DatabaseError("El usuario no existe");
+
+        // Eliminar relaciones en intermedia y tablas específicas
+        await UsuarioRol.destroy({ where: { id_usuario }, transaction: t });
+        if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
+            for (const role of user.roles) {
+                await deleteUserInRoleTable(role.id_rol, id_usuario, t);
+            }
+        }
+
+        await t.commit();
+    } catch (error) {
         await t.rollback();
         throw new DatabaseError(error.message);
     }
@@ -184,21 +274,7 @@ export const updateUsuario = async (id_usuario, data) => {
             fecha_nacimiento: data.fecha_nacimiento,
             genero: data.genero
         }, { transaction: t });
-        
-        const rol = await Rol.findOne({ where: { id_rol: data.id_rol } });
-
-        const currentRole = await UsuarioRol.findOne({ where: { id_usuario: user.id_usuario } });
-
-        if(!currentRole || currentRole.id_rol !== rol.id_rol){
-            await UsuarioRol.destroy({ where: { id_usuario: user.id_usuario } }, { transaction: t });
-            await UsuarioRol.create({
-                id_usuario: user.id_usuario,
-                id_rol: rol.id_rol
-            }, { transaction: t });
-            
-            await createUserInRoleTable(rol.id_rol, user.id_usuario, t);
-            if(currentRole) await deleteUserInRoleTable(currentRole.id_rol, user.id_usuario, t);
-        }
+        // Role changes removed: this endpoint no longer updates roles
         
         await t.commit();
 
@@ -234,8 +310,13 @@ export const deleteUsuario = async (id_usuario) => {
             ]
         });
 
+        // Clean up role relations if any exist
         await UsuarioRol.destroy({ where: { id_usuario: user.id_usuario }, transaction: t });
-        await deleteUserInRoleTable(user.roles.id_rol, user.id_usuario, t);
+        if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
+            for (const role of user.roles) {
+                await deleteUserInRoleTable(role.id_rol, user.id_usuario, t);
+            }
+        }
         await user.destroy({ transaction: t });
 
         await t.commit();
