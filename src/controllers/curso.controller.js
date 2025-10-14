@@ -1,4 +1,5 @@
 // controllers/curso.controller.js
+import * as cursoService from "../services/curso.service.js";
 import { Curso } from "../models/index.js";
 
 // Obtener todos los cursos
@@ -63,3 +64,17 @@ export const eliminarCurso = async (req, res) => {
     res.status(500).json({ error: "Error eliminando curso" });
   }
 };
+
+// Obtener materias por curso
+export const getMateriasPorCurso = async (req, res) => {
+  const { id } = req.params;
+  const materias = await cursoService.getMateriasPorCurso(id);
+  res.json(materias);
+}
+
+// Obtener alumnos por curso
+export const getAlumnosPorCurso = async (req, res) => {
+  const { id } = req.params;
+  const alumnos = await cursoService.getAlumnosPorCurso(id);
+  res.json(alumnos);
+}

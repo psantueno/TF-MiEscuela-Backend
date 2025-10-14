@@ -1,6 +1,18 @@
 // controllers/alumno.controller.js
 import { Alumno, Usuario, Asistencia } from "../models/index.js";
+import * as alumnoService from "../services/alumno.service.js";
 import { Op } from "sequelize";
+
+export const getAlumnos = async (req, res) => {
+  try {
+    const { id_curso } = req.query;
+    const alumnos = await alumnoService.getAlumnos(id_curso);
+    res.json(alumnos);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error obteniendo alumnos" });
+  }
+}
 
 export const obtenerAlumnosCursoPorFecha = async (req, res) => {
   const { id_curso } = req.params;
@@ -17,6 +29,7 @@ export const obtenerAlumnosCursoPorFecha = async (req, res) => {
         {
           model: Usuario,
           attributes: ["nombre_completo"],
+          as: 'usuario'
         },
         {
           model: Asistencia,
@@ -25,13 +38,13 @@ export const obtenerAlumnosCursoPorFecha = async (req, res) => {
           attributes: ["id_estado"],
         },
       ],
-      order: [[{ model: Usuario }, "nombre_completo", "ASC"]],
+      order: [[{ model: Usuario, as: 'usuario' }, "nombre_completo", "ASC"]],
     });
 
     // 🔹 Aplanar respuesta (siempre tomar la asistencia del día si existe)
     const data = alumnos.map((a) => ({
       id_alumno: a.id_alumno,
-      alumno_nombre: a.Usuario?.nombre_completo || "",
+      alumno_nombre: a.usuario?.nombre_completo || "",
       id_estado: a.Asistencia?.[0]?.id_estado || null,
     }));
 
