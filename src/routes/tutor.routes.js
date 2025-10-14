@@ -5,6 +5,9 @@ import { Router } from 'express';
 
 const router = Router();
 
-router.get('/hijos', authMiddleware, isTutor, tutorController.getHijos);
+// Protect all tutor routes
+router.use(authMiddleware);
+
+router.get('/hijos', isTutor, tutorController.getHijos);
 
 export default router;

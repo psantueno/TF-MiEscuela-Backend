@@ -1,8 +1,12 @@
 // routes/alumnos.routes.js
 import express from "express";
 import { obtenerAlumnosCursoPorFecha, getAlumnos } from "../controllers/alumno.controller.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
+
+// Protect all alumno routes
+router.use(authMiddleware);
 
 // Obtener todos los alumnos
 router.get("/", getAlumnos);

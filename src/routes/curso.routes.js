@@ -1,5 +1,6 @@
 // routes/curso.routes.js
 import express from "express";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   obtenerCursos,
   obtenerCursoPorId,
@@ -11,6 +12,9 @@ import {
 } from "../controllers/curso.controller.js";
 
 const router = express.Router();
+
+// Protect all curso routes
+router.use(authMiddleware);
 
 // GET /api/cursos
 router.get("/", obtenerCursos);

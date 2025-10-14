@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import * as usuarioController from "../controllers/usuario.controller.js";
 import { validateGetUsuarios, validateCreateUsuario, validateUpdateUsuario, validateDeleteUsuario, validateAssignRolUsuario, validateUnassignRolUsuario } from '../middlewares/validators/usuario.validator.js';
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
+
+// Protect all usuario routes
+router.use(authMiddleware);
 
 router.get("/", validateGetUsuarios, usuarioController.getUsuarios);
 router.get("/sin-rol", validateGetUsuarios, usuarioController.getUsuariosSinRol);
