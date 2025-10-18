@@ -14,18 +14,11 @@ export const Calificacion = sequelize.define("Calificacion", {
             key: 'id_alumno'
         }
     },
-    id_materia: {
+    id_materia_curso:{
         type: DataTypes.INTEGER,
         references: {
-            model: 'Materia',
-            key: 'id_materia'
-        }
-    },
-    id_curso: {
-        type: DataTypes.INTEGER,
-        references: {
-            model: 'Curso',
-            key: 'id_curso'
+            model: 'MateriasCurso',
+            key: 'id_materia_curso'
         }
     },
     id_docente: {
@@ -33,6 +26,13 @@ export const Calificacion = sequelize.define("Calificacion", {
         references: {
             model: 'Docente',
             key: 'id_docente'
+        }
+    },
+    id_tipo_calificacion: {
+        type: DataTypes.INTEGER,
+        references: {
+            model: 'TipoCalificacion',
+            key: 'id_tipo_calificacion'
         }
     },
     nota: {
@@ -43,17 +43,14 @@ export const Calificacion = sequelize.define("Calificacion", {
         type: DataTypes.DATE,
         allowNull: false
     },
-    ciclo_lectivo: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
     observaciones: {
         type: DataTypes.STRING,
         allowNull: true
     },
-    tipo:{
-        type: DataTypes.STRING,
-        allowNull: false
+    publicado: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
     }
 },{
     tableName: "calificaciones",

@@ -8,41 +8,21 @@ import { AsistenciaEstado } from "./AsistenciaEstado.js";
 import { Materia } from "./Materia.js";
 import { Calificacion } from "./Calificacion.js";
 import { Docente } from "./Docente.js";
-import { CursoMateria } from "./CursoMateria.js";
 import { Tutor } from "./Tutor.js";
 import { AlumnoTutor } from "./AlumnoTutores.js";
+import { Administrador } from "./Administrador.js";
+import { Rol } from "./Rol.js";
+import { AlumnosCursos } from "./AlumnosCursos.js";
+import { MateriasCurso } from "./MateriasCurso.js";
+import { AuxiliaresCurso } from "./AuxiliaresCurso.js";
+import { CiclosLectivos } from "./CiclosLectivos.js";
+import { DocentesMateriasCurso } from "./DocentesMateriasCurso.js";
+import { TipoCalificacion } from "./TipoCalificacion.js";
 
 // Alumno - usuario
 Alumno.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
 // Usuario - alumno
 Usuario.hasOne(Alumno, { foreignKey: "id_usuario", as: "alumno" });
-// Alumno - asistencia
-Alumno.hasMany(Asistencia, { foreignKey: "id_alumno" });
-// Alumno - curso
-Alumno.belongsTo(Curso, { foreignKey: "id_curso", as: "curso" });
-// Alumno - curso
-Curso.hasMany(Alumno, { foreignKey: "id_curso", as: "alumnos" });
-
-// asistencia - alumno
-Asistencia.belongsTo(Alumno, { foreignKey: "id_alumno" });
-// asistencia - usuario (quien registró la asistencia)
-Asistencia.belongsTo(Usuario, { foreignKey: "registrado_por" });
-// asistencia - estado
-Asistencia.belongsTo(AsistenciaEstado, { foreignKey: "id_estado" });
-
-// Calificacion - Alumno
-Calificacion.belongsTo(Alumno, { foreignKey: "id_alumno", as: "alumno" });
-// Calificacion - Materia
-Calificacion.belongsTo(Materia, { foreignKey: "id_materia", as: "materia" });
-// Calificacion - Curso
-Calificacion.belongsTo(Curso, { foreignKey: "id_curso", as: "curso" });
-// Calificacion - Docente
-Calificacion.belongsTo(Docente, { foreignKey: "id_docente", as: "docente" });
-
-// Curso - Materia (Muchos a Muchos)
-Curso.belongsToMany(Materia, { through: CursoMateria, foreignKey: 'id_curso', otherKey: 'id_materia', as: 'materias' });
-Materia.belongsToMany(Curso, { through: CursoMateria, foreignKey: 'id_materia', otherKey: 'id_curso', as: 'cursos' });
-
 
 // Docente - Usuario
 Docente.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
@@ -53,22 +33,186 @@ Usuario.hasOne(Docente, { foreignKey: "id_usuario", as: "docente" });
 Tutor.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
 // Usuario - Tutor
 Usuario.hasOne(Tutor, { foreignKey: "id_usuario", as: "tutor" });
+
+// Curso - Alumno (Muchos a Muchos) a través de AlumnosCursos
+Curso.belongsToMany(Alumno, {
+  through: AlumnosCursos,
+  foreignKey: 'id_curso',
+  otherKey: 'id_alumno',
+  as: 'alumnos'
+});
+
+// Alumno - Curso (Muchos a Muchos) a través de AlumnosCursos
+Alumno.belongsToMany(Curso, {
+  through: AlumnosCursos,
+  foreignKey: 'id_alumno',
+  otherKey: 'id_curso',
+  as: 'cursos'
+});
+
+// Alumno - asistencia
+Alumno.hasMany(Asistencia, { foreignKey: "id_alumno" });
+// Alumno - curso
+Alumno.belongsTo(Curso, { foreignKey: "id_curso", as: "curso" });
+// Alumno - curso
+// Curso.hasMany(Alumno, { foreignKey: "id_curso", as: "alumnos" });
+
+// asistencia - alumno
+Asistencia.belongsTo(Alumno, { foreignKey: "id_alumno" });
+// asistencia - usuario (quien registró la asistencia)
+Asistencia.belongsTo(Usuario, { foreignKey: "registrado_por" });
+// asistencia - estado
+Asistencia.belongsTo(AsistenciaEstado, { foreignKey: "id_estado" });
+
+// Curso - Materia (Muchos a Muchos) a través de MateriasCurso
+Curso.hasMany(MateriasCurso, {
+  foreignKey: 'id_curso',
+  as: 'materiasCurso'
+});
+// Materia - Curso (Muchos a Muchos) a través de MateriasCurso
+MateriasCurso.belongsTo(Curso, {
+  foreignKey: 'id_curso',
+  as: 'curso'
+});
+
+// Curso - CicloLectivo (Muchos a 1)
+Curso.belongsTo(CiclosLectivos, {
+  foreignKey: 'id_ciclo_lectivo',
+  as: 'cicloLectivo'
+});
+// CicloLectivo - Curso (1 a Muchos)
+CiclosLectivos.hasMany(Curso, {
+  foreignKey: 'id_ciclo_lectivo',
+  as: 'cursos'
+});
+
+// Materia - Curso (Muchos a Muchos) a través de MateriasCurso
+Materia.hasMany(MateriasCurso, {
+  foreignKey: 'id_materia',
+  as: 'materiasCurso'
+});
+// Curso - Materia (Muchos a Muchos) a través de MateriasCurso
+MateriasCurso.belongsTo(Materia, {
+  foreignKey: 'id_materia',
+  as: 'materia'
+});
+
+// Docente - MateriasCurso (Muchos a Muchos) a través de DocentesMateriasCurso
+Docente.belongsToMany(MateriasCurso, {
+  through: DocentesMateriasCurso,
+  foreignKey: 'id_docente',
+  otherKey: 'id_materia_curso',
+  as: 'materiasCurso'
+});
+
+MateriasCurso.belongsToMany(Docente, {
+  through: DocentesMateriasCurso,
+  foreignKey: 'id_materia_curso',
+  otherKey: 'id_docente',
+  as: 'docentes'
+});
+
+// TipoCalificacion - Calificacion (1 a Muchos)
+TipoCalificacion.hasMany(Calificacion, {
+  foreignKey: 'id_tipo_calificacion',
+  as: 'calificaciones'
+});
+
+// Calificacion - TipoCalificacion (Muchos a 1)
+Calificacion.belongsTo(TipoCalificacion, {
+  foreignKey: 'id_tipo_calificacion',
+  as: 'tipoCalificacion'
+});
+
+// Alumno - Calificacion (1 a Muchos)
+Alumno.hasMany(Calificacion, {
+  foreignKey: 'id_alumno',
+  as: 'calificaciones'
+});
+// Calificacion - Alumno (Muchos a 1)
+Calificacion.belongsTo(Alumno, {
+  foreignKey: 'id_alumno',
+  as: 'alumno'
+});
+
+// Docente - Calificacion (1 a Muchos)
+Docente.hasMany(Calificacion, {
+  foreignKey: 'id_docente',
+  as: 'calificaciones'
+});
+// Calificacion - Docente (Muchos a 1)
+Calificacion.belongsTo(Docente, {
+  foreignKey: 'id_docente',
+  as: 'docente'
+});
+
+// MateriasCurso - Calificacion (1 a Muchos)
+MateriasCurso.hasMany(Calificacion, {
+  foreignKey: 'id_materia_curso',
+  as: 'calificaciones'
+});
+// Calificacion - MateriasCurso (Muchos a 1)
+Calificacion.belongsTo(MateriasCurso, {
+  foreignKey: 'id_materia_curso',
+  as: 'materiaCurso'
+});
+
+// Calificacion - Alumno
+// Calificacion.belongsTo(Alumno, { foreignKey: "id_alumno", as: "alumno" });
+// Calificacion - Materia
+// Calificacion.belongsTo(Materia, { foreignKey: "id_materia", as: "materia" });
+// Calificacion - Curso
+// Calificacion.belongsTo(Curso, { foreignKey: "id_curso", as: "curso" });
+// Calificacion - Docente
+// Calificacion.belongsTo(Docente, { foreignKey: "id_docente", as: "docente" });
+
+// AuxiliaresCurso - Curso (Muchos a 1)
+AuxiliaresCurso.belongsTo(Curso, {
+  foreignKey: 'id_curso',
+  as: 'curso'
+});
+// Curso - AuxiliaresCurso (1 a Muchos)
+Curso.hasMany(AuxiliaresCurso, {
+  foreignKey: 'id_curso',
+  as: 'auxiliaresCurso'
+});
+
 // Alumno - Tutor (Muchos a Muchos) a través de AlumnoPadre
 Alumno.belongsToMany(Tutor, { through: AlumnoTutor, foreignKey: 'id_alumno', otherKey: 'id_tutor', as: 'tutores' });
 Tutor.belongsToMany(Alumno, { through: AlumnoTutor, foreignKey: 'id_tutor', otherKey: 'id_alumno', as: 'alumnos' });
 
+// Usuario - Rol (Muchos a Muchos) a través de usuarios_roles
+Usuario.belongsToMany(Rol,
+  {
+    through: {
+      model: "usuarios_roles",
+      unique: false,
+      timestamps: false
+    },
+    foreignKey: "id_usuario",
+    otherKey: "id_rol",
+    as: "roles"
+  }
+)
 
 export {
   sequelize,
+  Usuario,
   Alumno,
   Curso,
-  Usuario,
+  AlumnosCursos,
   Asistencia,
   AsistenciaEstado,
   Materia,
+  MateriasCurso,
   Calificacion,
   Docente,
-  CursoMateria,
+  DocentesMateriasCurso,
   Tutor,
-  AlumnoTutor
+  AlumnoTutor,
+  Administrador,
+  Rol,
+  AuxiliaresCurso,
+  CiclosLectivos,
+  TipoCalificacion
 };

@@ -8,6 +8,5 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', materiaController.getMaterias);
-router.get('/:id/cursos', materiaController.getCursosPorMateria);
 
 export default router;

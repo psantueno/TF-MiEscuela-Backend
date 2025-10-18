@@ -5,6 +5,9 @@ export const isTutor = async (req, res, next) => {
         const userId = req.usuario?.id_usuario;
     
         const tutor = await Tutor.findOne({ where: { id_usuario: userId } });
+        //const admin = await Administrador.findOne({ where: { id_usuario: userId } });
+
+       // if(admin) return next();
 
         if(!tutor) return res.status(403).json({ message: "No autorizado. El usuario no es tutor." });
 

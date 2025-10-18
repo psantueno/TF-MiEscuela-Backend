@@ -2,6 +2,17 @@
 import * as cursoService from "../services/curso.service.js";
 import { Curso } from "../models/index.js";
 
+// Obtener todos los cursos, restringido por rol de usuario
+export const getCursos = async (req, res) => {
+  try{
+    const user = req.usuario; 
+    const cursos = await cursoService.getCursos(user);
+    res.json(cursos);
+  }catch(error){
+    res.status(500).json({ error: "Error obteniendo cursos" });
+  }
+}
+
 // Obtener todos los cursos
 export const obtenerCursos = async (req, res) => {
   try {
@@ -67,14 +78,24 @@ export const eliminarCurso = async (req, res) => {
 
 // Obtener materias por curso
 export const getMateriasPorCurso = async (req, res) => {
-  const { id } = req.params;
-  const materias = await cursoService.getMateriasPorCurso(id);
-  res.json(materias);
+  try {
+    const { anio_escolar, division } = req.params;
+    const materias = await cursoService.getMateriasPorCurso(anio_escolar, division);
+    res.json(materias);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error obteniendo materias por curso" });
+  }
 }
 
 // Obtener alumnos por curso
 export const getAlumnosPorCurso = async (req, res) => {
-  const { id } = req.params;
-  const alumnos = await cursoService.getAlumnosPorCurso(id);
-  res.json(alumnos);
+  try {
+    const { id } = req.params;
+    const alumnos = await cursoService.getAlumnosPorCurso(id);
+    res.json(alumnos);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error obteniendo alumnos por curso" });
+  }
 }
