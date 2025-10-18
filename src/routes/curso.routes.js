@@ -20,6 +20,8 @@ router.use(authMiddleware);
 // GET /api/cursos
 router.get("/", obtenerCursos);
 
+router.get("/restricted", getCursos);
+
 // GET /api/cursos/:id
 router.get("/:id", obtenerCursoPorId);
 
@@ -38,6 +40,5 @@ router.put("/:id", actualizarCurso);
 // DELETE /api/cursos/:id
 router.delete("/:id", eliminarCurso);
 
-router.get("/restricted", getCursos);
 
 export default router;

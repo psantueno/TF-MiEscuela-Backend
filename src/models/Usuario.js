@@ -8,7 +8,11 @@ export const Usuario = sequelize.define("Usuario", {
     primaryKey: true,
     autoIncrement: true
   },
-  nombre_completo: {
+  nombre: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  apellido: {
     type: DataTypes.STRING,
     allowNull: false
   },
@@ -46,19 +50,19 @@ export const Usuario = sequelize.define("Usuario", {
       }
     }
   },
-  direccion: {
+  domicilio: {
     type: DataTypes.STRING,
     allowNull: true,
     get() {
-      const rawValue = this.getDataValue('direccion');
+      const rawValue = this.getDataValue('domicilio');
       return rawValue ? rawValue : 'No proporcionado';
     },
     set(value) {
       const restrictedValues = ["No proporcionado"];
       if (restrictedValues.includes(value)){
-        this.setDataValue('direccion', null);
+        this.setDataValue('domicilio', null);
       }else{
-        this.setDataValue('direccion', value);
+        this.setDataValue('domicilio', value);
       }
     },
   },

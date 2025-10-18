@@ -9,6 +9,7 @@ export const getCursos = async (req, res) => {
     const cursos = await cursoService.getCursos(user);
     res.json(cursos);
   }catch(error){
+    console.error(error);
     res.status(500).json({ error: "Error obteniendo cursos" });
   }
 }
@@ -79,8 +80,8 @@ export const eliminarCurso = async (req, res) => {
 // Obtener materias por curso
 export const getMateriasPorCurso = async (req, res) => {
   try {
-    const { anio_escolar, division } = req.params;
-    const materias = await cursoService.getMateriasPorCurso(anio_escolar, division);
+    const { id } = req.params;
+    const materias = await cursoService.getMateriasPorCurso(id);
     res.json(materias);
   } catch (error) {
     console.error(error);

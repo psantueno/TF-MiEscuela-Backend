@@ -2,8 +2,8 @@ import * as calificacionService from '../services/calificacion.service.js';
 
 export const getCalificaciones = async (req, res) => {
     try{
-        const { anio_escolar, division, id_materia, id_alumno } = req.query;
-        const calificaciones = await calificacionService.getCalificaciones(anio_escolar, division, id_materia, id_alumno);
+        const { id_curso, id_materia, id_alumno } = req.query;
+        const calificaciones = await calificacionService.getCalificaciones(id_curso, id_materia, id_alumno);
         res.json(calificaciones);
     }catch(error){
         res.status(500).json({ error: "Error obteniendo calificaciones" });
