@@ -30,7 +30,8 @@ export const login = async (email, password) => {
 
     const payload = {
         id_usuario: user.id_usuario,
-        nombre_completo: user.nombre_completo,
+        nombre: user.nombre,
+        apellido: user.apellido,
         email: user.email,
         rol,
         notificaciones
@@ -40,7 +41,7 @@ export const login = async (email, password) => {
     const access_token = generateAccessToken(payload);
     const refresh_token = generateRefreshToken(payload);
 
-    return { access_token, refresh_token, csrf_token, user: { nombre_completo: user.nombre_completo, email: user.email, rol, notificaciones } };
+    return { access_token, refresh_token, csrf_token, user: { nombre: user.nombre, apellido: user.apellido, email: user.email, rol, notificaciones } };
 }
 
 export const refreshToken = async (refreshToken) => {
@@ -48,7 +49,7 @@ export const refreshToken = async (refreshToken) => {
         const payload = verifyToken(refreshToken, 'refresh');
         const newAccessToken = generateAccessToken(payload);
 
-        const user = { nombre_completo: payload.nombre_completo, email: payload.email, rol: payload.rol, notificaciones: payload.notificaciones };
+        const user = { nombre: payload.nombre, apellido: payload.apellido, email: payload.email, rol: payload.rol, notificaciones: payload.notificaciones };
         return { newAccessToken, user };
     }catch(error){
         throw error;

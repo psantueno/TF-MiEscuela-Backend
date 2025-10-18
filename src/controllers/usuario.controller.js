@@ -2,11 +2,11 @@ import * as usuarioService from '../services/usuario.service.js';
 
 export const getUsuarios = async (req, res, next) => {
     try{
-        const { page = 1, perPage = 10, nombre_completo, id_rol } = req.query;
+        const { page = 1, perPage = 10, nombre, apellido, id_rol } = req.query;
         const limit = parseInt(perPage);
         const offset = (parseInt(page) - 1) * limit;
 
-        const { users, total } = await usuarioService.getUsuarios(limit, offset, { nombre_completo, id_rol });
+        const { users, total } = await usuarioService.getUsuarios(limit, offset, { nombre, apellido, id_rol });
 
         res.status(200).json({ data: users, total });
     }catch(error){
@@ -16,11 +16,11 @@ export const getUsuarios = async (req, res, next) => {
 
 export const getUsuariosSinRol = async (req, res, next) => {
     try{
-        const { page = 1, perPage = 10, nombre_completo } = req.query;
+        const { page = 1, perPage = 10, nombre, apellido } = req.query;
         const limit = parseInt(perPage);
         const offset = (parseInt(page) - 1) * limit;
 
-        const { users, total } = await usuarioService.getUsuariosSinRol(limit, offset, { nombre_completo });
+        const { users, total } = await usuarioService.getUsuariosSinRol(limit, offset, { nombre, apellido });
 
         res.status(200).json({ data: users, total });
     }catch(error){

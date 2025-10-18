@@ -9,7 +9,7 @@ export const getAlumnos = async (idCurso) => {
         include: [
             {
                 model: Usuario,
-                attributes: ["nombre_completo"],
+                attributes: ["nombre", "apellido"],
                 as: 'usuario'
             },
             {
@@ -19,7 +19,7 @@ export const getAlumnos = async (idCurso) => {
             }
         ],
         attributes: ["id_alumno"],
-        order: [[{ model: Usuario, as: 'usuario' }, 'nombre_completo', 'ASC']]
+        order: [[{ model: Usuario, as: 'usuario' }, 'apellido', 'ASC'], [{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']]
     });
 
     return alumnos;

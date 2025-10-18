@@ -11,24 +11,26 @@ const getUsuariosSchema = z.object({
 });
 
 const createUsuarioSchema = z.object({
-    nombre_completo: z.string("El nombre completo debe ser una cadena de caracteres").min(1, "El nombre completo es obligatorio"),
+    nombre: z.string("El nombre debe ser una cadena de caracteres").min(1, "El nombre es obligatorio"),
+    apellido: z.string("El apellido debe ser una cadena de caracteres").min(1, "El apellido es obligatorio"),
     numero_documento: z.string("El número de documento debe ser una cadena de caracteres").min(1, "El número de documento es obligatorio"),
     legajo: z.string("El legajo debe ser una cadena de caracteres").min(1, "El legajo es obligatorio"),
     email: z.string("El email debe ser una cadena de caracteres").regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "El formato del email no es válido"),
     contrasenia: z.string("La contraseña debe ser una cadena de caracteres").min(8, "La contraseña debe tener al menos 8 caracteres"),
     telefono: z.string("El teléfono debe ser una cadena de caracteres").optional(),
-    direccion: z.string("La dirección debe ser una cadena de caracteres").optional(),
+    domicilio: z.string("El domicilio debe ser una cadena de caracteres").optional(),
     fecha_nacimiento: z.string("La fecha de nacimiento debe ser una cadena de caracteres").optional(),
     genero: z.string("El género debe ser una cadena de caracteres").optional()
 });
 
 const updateUsuarioSchema = z.object({
-    nombre_completo: z.string("El nombre completo debe ser una cadena de caracteres").min(1, "El nombre completo es obligatorio"),
+    nombre: z.string("El nombre debe ser una cadena de caracteres").min(1, "El nombre es obligatorio"),
+    apellido: z.string("El apellido debe ser una cadena de caracteres").min(1, "El apellido es obligatorio"),
     numero_documento: z.string("El número de documento debe ser una cadena de caracteres").min(1, "El número de documento es obligatorio"),
     legajo: z.string("El legajo debe ser una cadena de caracteres").min(1, "El legajo es obligatorio"),
     email: z.string("El email debe ser una cadena de caracteres").regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "El formato del email no es válido"),
     telefono: z.string("El teléfono debe ser una cadena de caracteres").optional(),
-    direccion: z.string("La dirección debe ser una cadena de caracteres").optional(),
+    domicilio: z.string("El domicilio debe ser una cadena de caracteres").optional(),
     fecha_nacimiento: z.string("La fecha de nacimiento debe ser una cadena de caracteres").optional(),
     genero: z.string("El género debe ser una cadena de caracteres").optional()
 });

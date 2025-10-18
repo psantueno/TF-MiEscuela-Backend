@@ -28,7 +28,7 @@ export const obtenerAlumnosCursoPorFecha = async (req, res) => {
       include: [
         {
           model: Usuario,
-          attributes: ["nombre_completo"],
+          attributes: ["nombre", "apellido"],
           as: 'usuario'
         },
         {
@@ -38,13 +38,16 @@ export const obtenerAlumnosCursoPorFecha = async (req, res) => {
           attributes: ["id_estado"],
         },
       ],
-      order: [[{ model: Usuario, as: 'usuario' }, "nombre_completo", "ASC"]],
+      order: [
+        [{ model: Usuario, as: 'usuario' }, "nombre", "ASC"],
+        [{ model: Usuario, as: 'usuario' }, "apellido", "ASC"],
+      ],
     });
 
     // 🔹 Aplanar respuesta (siempre tomar la asistencia del día si existe)
     const data = alumnos.map((a) => ({
       id_alumno: a.id_alumno,
-      alumno_nombre: a.usuario?.nombre_completo || "",
+      alumno_nombre: `${a.usuario?.nombre || ""} ${a.usuario?.apellido || ""}`.trim(),
       id_estado: a.Asistencia?.[0]?.id_estado || null,
     }));
 

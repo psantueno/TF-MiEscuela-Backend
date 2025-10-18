@@ -13,7 +13,7 @@ export const getHijos = async (idTutor) => {
                     { 
                         model: Usuario,
                         as: 'usuario',
-                        attributes: ['nombre_completo']
+                        attributes: ['nombre','apellido']
                     },
                     {
                         model: Curso,
@@ -23,7 +23,7 @@ export const getHijos = async (idTutor) => {
                 ]
             }
         ],
-        order: [[{ model: Alumno, as: 'alumnos' }, { model: Usuario, as: 'usuario' }, 'nombre_completo', 'ASC']]
+        order: [[{ model: Alumno, as: 'alumnos' }, { model: Usuario, as: 'usuario' }, 'apellido', 'ASC'], [{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']]
     });
     return tutor ? tutor.alumnos : [];
 }
