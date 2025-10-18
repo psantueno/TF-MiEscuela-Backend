@@ -14,6 +14,14 @@ export const Curso = sequelize.define("Curso", {
   division: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  id_ciclo: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: "Ciclos",
+      key: "id_ciclo"
+    }
   }
 }, {
   tableName: "cursos",

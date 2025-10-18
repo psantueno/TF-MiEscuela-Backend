@@ -8,9 +8,3 @@ export const getMaterias = async (req, res) => {
     const materias = await usuarioService.getMaterias(limit, offset);
     res.json(materias);
 }
-
-export const getCursosPorMateria = async (req, res) => {
-    const { id } = req.params;
-    const cursos = await usuarioService.getCursosPorMateria(id);
-    res.json(cursos);
-}

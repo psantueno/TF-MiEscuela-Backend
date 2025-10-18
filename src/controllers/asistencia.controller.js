@@ -153,7 +153,7 @@ export const obtenerAsistenciasAlumnoEntreFechas = async (req, res) => {
       alumno_id: a.Alumno?.id_alumno,
       alumno_nombre: a.Alumno?.Usuario?.nombre_completo,
       curso_anio: a.Alumno?.Curso?.anio_escolar,
-      curso_division: a.Alumno?.Curso?.division,
+      curso_division: a.Alumno?.Curso?.division, 
     }));
 
     res.json(data);
@@ -163,6 +163,64 @@ export const obtenerAsistenciasAlumnoEntreFechas = async (req, res) => {
   }
 };
 
+export const obtenerPromedioAsistenciasCurso = async (req, res) => { 
+  try {
+    const { id_curso } = req.params;
+    const { desde, hasta } = req.query;
+
+    const asistencias = await Asistencia.findAll({
+      include: [
+        {
+          model: Alumno,
+          where: { id_curso },
+          include: [
+            { model: Curso, attributes: ["anio_escolar", "division"], as: "curso" },
+            { model: Usuario, attributes: ["nombre_completo"], as: "usuario" },
+          ],
+        },
+        { model: AsistenciaEstado, attributes: ["descripcion"] },
+      ],
+      where: { fecha: { [Op.between]: [desde, hasta] } },
+    });
+
+    const plainAsistencias = asistencias.map((a) => a.get({ plain: true }));
+
+    const asistenciaPorAlumno = {};
+
+    plainAsistencias.forEach((a) => {
+      const id = a.Alumno?.id_alumno;
+      if (!id) return;
+
+      if (!asistenciaPorAlumno[id]) {
+        asistenciaPorAlumno[id] = {
+          id_alumno: id,
+          nombre_completo: a.Alumno?.usuario?.nombre_completo || "Sin nombre",
+          total: 0,
+          presentes: 0,
+        };
+      }
+
+      asistenciaPorAlumno[id].total += 1;
+      if (a.AsistenciaEstado?.descripcion === "Presente") {
+        asistenciaPorAlumno[id].presentes += 1;
+      }
+    });
+
+    const resultados = Object.values(asistenciaPorAlumno).map((alumno) => ({
+      id_alumno: alumno.id_alumno,
+      nombre_completo: alumno.nombre_completo,
+      promedio:
+        alumno.total > 0
+          ? Number(((alumno.presentes / alumno.total) * 100).toFixed(2))
+          : 0,
+    }));
+
+    res.json(resultados);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error obteniendo el promedio de asistencias del alumno" });
+  }
+};
 
 // DELETE /api/asistencias/curso/:id_curso?fecha=YYYY-MM-DD
 export const eliminarAsistenciasCurso = async (req, res) => {

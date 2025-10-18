@@ -8,9 +8,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', calificacionController.getCalificaciones);
-router.get('/alumnos/:id_alumno', calificacionController.getCalificacionByAlumno);
 router.put('/', calificacionController.updateManyCalificaciones);
 router.post('/', calificacionController.createManyCalificaciones);
-router.delete('/', calificacionController.deleteManyCalificaciones);
 
 export default router;

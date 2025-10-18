@@ -100,16 +100,3 @@ export const Usuario = sequelize.define("Usuario", {
   createdAt: "creado_el",
   updatedAt: "actualizado_el"
 });
-
-Usuario.belongsToMany(Rol,
-  {
-    through: {
-      model: "usuarios_roles",
-      unique: false,
-      timestamps: false
-    },
-    foreignKey: "id_usuario",
-    otherKey: "id_rol",
-    as: "roles"
-  }
-)

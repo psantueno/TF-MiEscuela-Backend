@@ -1,10 +1,9 @@
-import { Calificacion } from "../models/Calificacion.js";
-import { Alumno, Docente, Usuario, Curso, Materia } from "../models/index.js";
+import { Alumno, Docente, Usuario, Curso, Materia, Calificacion, MateriasCurso } from "../models/index.js";
 
-export const getCalificaciones = async (idCurso, idMateria) => {
-    const whereClause = {};
-    if (idCurso) whereClause.id_curso = idCurso;
+export const getCalificaciones = async (anio_escolar, division, idMateria, idAlumno) => {
+    /*const whereClause = {};
     if (idMateria) whereClause.id_materia = idMateria;
+    if (idAlumno) whereClause.id_alumno = idAlumno;
 
     const calificaciones = await Calificacion.findAll({ 
         where: whereClause,  
@@ -47,51 +46,60 @@ export const getCalificaciones = async (idCurso, idMateria) => {
             [{ model: Alumno, as: 'alumno' }, { model: Usuario, as: 'usuario' }, 'nombre_completo', 'ASC']
         ]
     });
-    return calificaciones;
-};
+    return calificaciones; */
 
-export const getCalificacionByAlumno = async (idAlumno, idMateria = null) => {
-    const whereClause = { id_alumno: idAlumno };
-    if (idMateria) whereClause.id_materia = idMateria;
-    const calificaciones = await Calificacion.findAll({ 
-        where: whereClause,
+    const curso = await Curso.findOne({
+        where: { anio_escolar, division },
+        order: [['ciclo_lectivo', 'DESC']],
+    });
+
+    const materiasWhereClause = {id_curso: curso.id_curso};
+    if (idMateria) materiasWhereClause.id_materia = idMateria;
+
+    const alumnosWhereClause = {};
+    if (idAlumno) alumnosWhereClause.id_alumno = idAlumno;
+
+    const calificaciones = await Calificacion.findAll({
         include: [
             {
-                model: Alumno,
+                model: MateriasCurso,
+                as: 'materiaCurso',
+                required: true,
+                where: materiasWhereClause,
                 include: [
-                    { 
-                        model: Usuario, 
-                        attributes: ['nombre_completo'],
-                        as: 'usuario' 
-                    }
+                    {
+                        model: Materia,
+                        as: 'materia',
+                        attributes: ['nombre'],
+                    },
                 ],
-                as: 'alumno'
+            },
+            {
+                model: Alumno,
+                as: 'alumno',
+                include: [
+                    {
+                        model: Usuario,
+                        as: 'usuario',
+                        attributes: ['nombre_completo'],
+                    }
+                ]
             },
             {
                 model: Docente,
+                as: 'docente',
                 include: [
-                    {
-                        model: Usuario, 
+                    {   
+                        model: Usuario,
+                        as: 'usuario',
                         attributes: ['nombre_completo'],
-                        as: 'usuario'
                     }
-                ],
-                as: 'docente'
-            },
-            {
-                model: Curso,
-                attributes: ['anio_escolar', 'division'],
-                as: 'curso'
-            },
-            {
-                model: Materia,
-                attributes: ['nombre'],
-                as: 'materia'
+                ]
             }
         ],
-        order: [['ciclo_lectivo', 'DESC']]
+        where: alumnosWhereClause,
+        order: [['id_calificacion', 'ASC']],
     });
-    return calificaciones;
 };
 
 export const updateManyCalificaciones = async (calificaciones) => {
@@ -123,11 +131,4 @@ export const createManyCalificaciones = async (calificaciones) => {
         });
     });
     await Promise.all(createPromises);
-}
-
-export const deleteManyCalificaciones = async (calificaciones) => {
-    const deletePromises = calificaciones.map(id_calificacion => {
-        return Calificacion.destroy({ where: { id_calificacion } });
-    });
-    await Promise.all(deletePromises);
 }

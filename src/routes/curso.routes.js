@@ -9,6 +9,7 @@ import {
   eliminarCurso,
   getMateriasPorCurso,
   getAlumnosPorCurso,
+  getCursos
 } from "../controllers/curso.controller.js";
 
 const router = express.Router();
@@ -36,5 +37,7 @@ router.put("/:id", actualizarCurso);
 
 // DELETE /api/cursos/:id
 router.delete("/:id", eliminarCurso);
+
+router.get("/restricted", getCursos);
 
 export default router;
