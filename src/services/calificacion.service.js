@@ -1,6 +1,6 @@
 import { Alumno, Docente, Usuario, Curso, Materia, Calificacion, MateriasCurso } from "../models/index.js";
 
-export const getCalificaciones = async (anio_escolar, division, idMateria, idAlumno) => {
+export const getCalificaciones = async (idCurso, idMateria, idAlumno) => {
     /*const whereClause = {};
     if (idMateria) whereClause.id_materia = idMateria;
     if (idAlumno) whereClause.id_alumno = idAlumno;
@@ -48,12 +48,7 @@ export const getCalificaciones = async (anio_escolar, division, idMateria, idAlu
     });
     return calificaciones; */
 
-    const curso = await Curso.findOne({
-        where: { anio_escolar, division },
-        order: [['ciclo_lectivo', 'DESC']],
-    });
-
-    const materiasWhereClause = {id_curso: curso.id_curso};
+    const materiasWhereClause = {id_curso: idCurso};
     if (idMateria) materiasWhereClause.id_materia = idMateria;
 
     const alumnosWhereClause = {};
@@ -64,7 +59,6 @@ export const getCalificaciones = async (anio_escolar, division, idMateria, idAlu
             {
                 model: MateriasCurso,
                 as: 'materiaCurso',
-                required: true,
                 where: materiasWhereClause,
                 include: [
                     {
@@ -98,7 +92,7 @@ export const getCalificaciones = async (anio_escolar, division, idMateria, idAlu
             }
         ],
         where: alumnosWhereClause,
-        order: [['id_calificacion', 'ASC']],
+        order: [[{ model: Alumno, as: 'alumno' }, { model: Usuario, as: 'usuario' }, 'apellido', 'ASC'], [{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']],
     });
 };
 

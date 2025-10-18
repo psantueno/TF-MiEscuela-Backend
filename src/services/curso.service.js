@@ -1,4 +1,4 @@
-import { Materia, Curso, Alumno, Usuario, Docente, MateriasCurso, AlumnosCursos} from "../models/index.js";
+import { Materia, Curso, Alumno, Usuario, Docente, MateriasCurso, AlumnosCursos, sequelize} from "../models/index.js";
 
 /** Retorna los cursos según el rol del usuario
  * Administrador y Director: todos los cursos
@@ -6,28 +6,37 @@ import { Materia, Curso, Alumno, Usuario, Docente, MateriasCurso, AlumnosCursos}
  */
 export const getCursos = async (user) => {
     if(user.rol === "Administrador" || user.rol === "Director"){
+        console.log("Obteniendo todos los cursos para rol:", user.rol);
         const cursos = await Curso.findAll({
-            attributes: ["id_curso", "anio_escolar", "division"],
-            order: [["anio_escolar", "ASC"], ["division", "ASC"]],
-            group: ["anio_escolar", "division"]
+            attributes: [
+                [sequelize.fn('MAX', sequelize.col('id_curso')), 'id_curso'],
+                'anio_escolar',
+                'division'
+            ],
+            group: ['anio_escolar', 'division'],
+            order: [['anio_escolar', 'ASC'], ['division', 'ASC']],
         });
         return cursos;
     }
-
+    
     if(user.rol === "Docente"){
+        console.log("Obteniendo todos los cursos para rol:", user.rol);
+        const cicloActual = new Date().getFullYear();
+
         const docente = await Docente.findOne({
             where: { id_usuario: user.id_usuario },
             attributes: ['id_docente']
         });
 
         const cursos = await Curso.findAll({
+            where: { ciclo_lectivo: cicloActual },
             include: [
                 {
                     model: MateriasCurso,
                     as: 'materiasCurso',
                     include: [
                         {
-                        model: Docente,
+                            model: Docente,
                             as: 'docentes',
                             where: { id_docente: docente.id_docente },
                             attributes: []
@@ -42,14 +51,16 @@ export const getCursos = async (user) => {
                 'division',
                 'ciclo_lectivo'
             ],
-            group: ['Curso.id_curso', 'Curso.anio_escolar', 'Curso.division', 'Curso.ciclo_lectivo'],
-            order: [["anio_escolar", "ASC"], ["division", "ASC"]]
+            order: [
+                ['anio_escolar', 'ASC'],
+                ['division', 'ASC']
+            ],
         });
         return cursos;
     }
 }
 
-export const getMateriasPorCurso = async (anio_escolar, division) => {
+export const getMateriasPorCurso = async (idCurso) => {
     /*const materias = await Curso.findByPk(idCurso,{
         include: [
             {
@@ -72,8 +83,7 @@ export const getMateriasPorCurso = async (anio_escolar, division) => {
                     model: Curso,
                     as: 'curso',
                     where: {
-                        anio_escolar: anio_escolar,
-                        division: division
+                        id_curso: idCurso
                     },
                     attributes: []
                 }
@@ -82,7 +92,7 @@ export const getMateriasPorCurso = async (anio_escolar, division) => {
         }
     ],
     attributes: [
-        [Sequelize.fn('DISTINCT', Sequelize.col('Materia.id_materia')), 'id_materia'],
+        'id_materia',
         'nombre',
     ],
     });
@@ -90,7 +100,7 @@ export const getMateriasPorCurso = async (anio_escolar, division) => {
     return materias;
 }
 
-export const getAlumnosPorCurso = async (anio_escolar, division) => {
+export const getAlumnosPorCurso = async (idCurso) => {
     /*const alumnos = await Curso.findByPk(idCurso, {
         include: [
             {
@@ -115,30 +125,22 @@ export const getAlumnosPorCurso = async (anio_escolar, division) => {
     }).then(curso => curso ? curso.alumnos : []);
     return alumnos;*/
 
-    const curso = await Curso.findOne({
-        where: { anio_escolar, division },
-        order: [['ciclo_lectivo', 'DESC']],
-        attributes: ['id_curso', 'anio_escolar', 'division', 'ciclo_lectivo']
-    });
-
-    if (!curso) return [];
-
     const alumnos = await Alumno.findAll({
         include: [
             {
-                model: AlumnosCursos,
+                model: Curso,
                 as: 'cursos',
-                where: { id_curso: curso.id_curso },
+                where: { id_curso: idCurso },
                 attributes: []
             },
             {
                 model: Usuario,
                 as: 'usuario',
-                attributes: ['nombre_completo']
+                attributes: ['apellido','nombre']
             }
         ],
         attributes: ['id_alumno'],
-        order: [['nombre_completo', 'ASC']]
+        order: [[{ model: Usuario, as: 'usuario' }, 'apellido', 'ASC'], [{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']]
     });
 
     return alumnos;

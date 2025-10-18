@@ -77,12 +77,12 @@ MateriasCurso.belongsTo(Curso, {
 
 // Curso - CicloLectivo (Muchos a 1)
 Curso.belongsTo(CiclosLectivos, {
-  foreignKey: 'id_ciclo_lectivo',
+  foreignKey: 'id_ciclo',
   as: 'cicloLectivo'
 });
 // CicloLectivo - Curso (1 a Muchos)
 CiclosLectivos.hasMany(Curso, {
-  foreignKey: 'id_ciclo_lectivo',
+  foreignKey: 'id_ciclo',
   as: 'cursos'
 });
 
