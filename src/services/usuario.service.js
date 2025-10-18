@@ -70,7 +70,8 @@ const deleteUserInRoleTable = async (oldRole, userId, transaction) => {
 
 export const getUsuarios = async (limit, offset, filters) => {
     const whereClause = {};
-    if(filters.nombre_completo) whereClause.nombre_completo = { [Op.iLike]: `%${filters.nombre_completo}%` };
+    if (filters.nombre) whereClause.nombre = { [Op.iLike]: `%${filters.nombre}%` };
+    if (filters.apellido) whereClause.apellido = { [Op.iLike]: `%${filters.apellido}%` };
 
     if(filters.id_rol){
         const usuariosConRol = await UsuarioRol.findAll({ where: { id_rol: filters.id_rol }, attributes: ['id_usuario'] });
@@ -118,12 +119,13 @@ export const createUsuario = async (data) => {
         const hashedPassword = await bcrypt.hash(data.contrasenia, 10);
 
         const newUser = await Usuario.create({
-            nombre_completo: data.nombre_completo,
+            nombre: data.nombre,
+            apellido: data.apellido,
             numero_documento: data.numero_documento,
             legajo: data.legajo,
             email: data.email,
             telefono: data.telefono ? data.telefono : null,
-            direccion: data.direccion ? data.direccion : null,
+            domicilio: data.domicilio ? data.domicilio : null,
             fecha_nacimiento: data.fecha_nacimiento ? data.fecha_nacimiento : null,
             genero: data.genero ? data.genero : null,
             contrasenia: hashedPassword
@@ -154,7 +156,8 @@ export const createUsuario = async (data) => {
 
 export const getUsuariosSinRol = async (limit, offset, filters = {}) => {
     const whereClause = {};
-    if (filters.nombre_completo) whereClause.nombre_completo = { [Op.iLike]: `%${filters.nombre_completo}%` };
+    if (filters.nombre) whereClause.nombre = { [Op.iLike]: `%${filters.nombre}%` };
+    if (filters.apellido) whereClause.apellido = { [Op.iLike]: `%${filters.apellido}%` };
 
     const usuariosConRol = await UsuarioRol.findAll({ attributes: ['id_usuario'] });
     const idsUsuariosConRol = usuariosConRol.map(ur => ur.id_usuario);
@@ -265,12 +268,13 @@ export const updateUsuario = async (id_usuario, data) => {
         });
 
         await user.update({
-            nombre_completo: data.nombre_completo,
+            nombre: data.nombre,
+            apellido: data.apellido,
             numero_documento: data.numero_documento,
             legajo: data.legajo,
             email: data.email,
             telefono: data.telefono,
-            direccion: data.direccion,
+            domicilio: data.domicilio,
             fecha_nacimiento: data.fecha_nacimiento,
             genero: data.genero
         }, { transaction: t });

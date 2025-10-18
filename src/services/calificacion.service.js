@@ -75,7 +75,7 @@ export const getCalificaciones = async (idCurso, idMateria, idAlumno) => {
                     {
                         model: Usuario,
                         as: 'usuario',
-                        attributes: ['nombre_completo'],
+                        attributes: ['nombre', 'apellido'],
                     }
                 ]
             },
@@ -86,7 +86,7 @@ export const getCalificaciones = async (idCurso, idMateria, idAlumno) => {
                     {   
                         model: Usuario,
                         as: 'usuario',
-                        attributes: ['nombre_completo'],
+                        attributes: ['nombre', 'apellido'],
                     }
                 ]
             }

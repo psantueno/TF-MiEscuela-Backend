@@ -47,7 +47,7 @@ export const obtenerAsistenciasCursoFecha = async (req, res) => {
           where: { id_curso },
           include: [
             { model: Curso, attributes: ["anio_escolar", "division"], as: 'curso' },
-            { model: Usuario, attributes: ["nombre_completo"], as: 'usuario' },
+            { model: Usuario, attributes: ["nombre", "apellido"], as: 'usuario' },
           ],
         },
         { model: AsistenciaEstado, attributes: ["descripcion"] },
@@ -61,7 +61,7 @@ export const obtenerAsistenciasCursoFecha = async (req, res) => {
       id_estado: a.id_estado,
       estado_nombre: a.AsistenciaEstado?.descripcion,
       alumno_id: a.Alumno?.id_alumno,
-      alumno_nombre: a.Alumno?.usuario?.nombre_completo,
+      alumno_nombre: `${a.Alumno?.usuario?.nombre || ""} ${a.Alumno?.usuario?.apellido || ""}`.trim(),
       curso_anio: a.Alumno?.curso?.anio_escolar,
       curso_division: a.Alumno?.curso?.division,
     }));
@@ -92,7 +92,7 @@ export const obtenerAsistenciasCursoEntreFechas = async (req, res) => {
           where: { id_curso },
           include: [
             { model: Curso, attributes: ["anio_escolar", "division"], as: 'curso' },
-            { model: Usuario, attributes: ["nombre_completo"], as: 'usuario' },
+            { model: Usuario, attributes: ["nombre", "apellido"], as: 'usuario' },
           ],
         },
         { model: AsistenciaEstado, attributes: ["descripcion"] },
@@ -106,7 +106,7 @@ export const obtenerAsistenciasCursoEntreFechas = async (req, res) => {
       id_estado: a.id_estado,
       estado_nombre: a.AsistenciaEstado?.descripcion,
       alumno_id: a.Alumno?.id_alumno,
-      alumno_nombre: a.Alumno?.usuario?.nombre_completo,
+      alumno_nombre: `${a.Alumno?.usuario?.nombre || ""} ${a.Alumno?.usuario?.apellido || ""}`.trim(),
       curso_anio: a.Alumno?.curso?.anio_escolar,
       curso_division: a.Alumno?.curso?.division,
     }));
@@ -137,7 +137,7 @@ export const obtenerAsistenciasAlumnoEntreFechas = async (req, res) => {
           where: { id_alumno },
           include: [
             { model: Curso, attributes: ["anio_escolar", "division"], as: 'curso' },
-            { model: Usuario, attributes: ["nombre_completo"], as: 'usuario' },
+            { model: Usuario, attributes: ["nombre", "apellido"], as: 'usuario' },
           ],
         },
         { model: AsistenciaEstado, attributes: ["descripcion"] },
@@ -151,7 +151,7 @@ export const obtenerAsistenciasAlumnoEntreFechas = async (req, res) => {
       id_estado: a.id_estado,
       estado_nombre: a.AsistenciaEstado?.descripcion,
       alumno_id: a.Alumno?.id_alumno,
-      alumno_nombre: a.Alumno?.Usuario?.nombre_completo,
+      alumno_nombre: `${a.Alumno?.usuario?.nombre || ""} ${a.Alumno?.usuario?.apellido || ""}`.trim(),
       curso_anio: a.Alumno?.Curso?.anio_escolar,
       curso_division: a.Alumno?.Curso?.division, 
     }));
@@ -175,7 +175,7 @@ export const obtenerPromedioAsistenciasCurso = async (req, res) => {
           where: { id_curso },
           include: [
             { model: Curso, attributes: ["anio_escolar", "division"], as: "curso" },
-            { model: Usuario, attributes: ["nombre_completo"], as: "usuario" },
+            { model: Usuario, attributes: ["nombre", "apellido"], as: "usuario" },
           ],
         },
         { model: AsistenciaEstado, attributes: ["descripcion"] },
@@ -194,7 +194,8 @@ export const obtenerPromedioAsistenciasCurso = async (req, res) => {
       if (!asistenciaPorAlumno[id]) {
         asistenciaPorAlumno[id] = {
           id_alumno: id,
-          nombre_completo: a.Alumno?.usuario?.nombre_completo || "Sin nombre",
+          nombre: a.Alumno?.usuario?.nombre || "",
+          apellido: a.Alumno?.usuario?.apellido || "",
           total: 0,
           presentes: 0,
         };
@@ -208,7 +209,8 @@ export const obtenerPromedioAsistenciasCurso = async (req, res) => {
 
     const resultados = Object.values(asistenciaPorAlumno).map((alumno) => ({
       id_alumno: alumno.id_alumno,
-      nombre_completo: alumno.nombre_completo,
+      nombre: alumno.nombre,
+      apellido: alumno.apellido,
       promedio:
         alumno.total > 0
           ? Number(((alumno.presentes / alumno.total) * 100).toFixed(2))
