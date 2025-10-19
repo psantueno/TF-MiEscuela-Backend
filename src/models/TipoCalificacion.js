@@ -12,6 +12,6 @@ export const TipoCalificacion = sequelize.define("TipoCalificacion", {
         allowNull: false
     }
 },{
-    tableName: "tipos_calificaciones",
+    tableName: "tipo_calificacion",
     timestamps: false
 });
