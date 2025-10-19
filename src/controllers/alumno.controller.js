@@ -47,7 +47,9 @@ export const obtenerAlumnosCursoPorFecha = async (req, res) => {
     // 🔹 Aplanar respuesta (siempre tomar la asistencia del día si existe)
     const data = alumnos.map((a) => ({
       id_alumno: a.id_alumno,
-      alumno_nombre: `${a.usuario?.nombre || ""} ${a.usuario?.apellido || ""}`.trim(),
+      alumno_nombre: `${a.usuario?.apellido || ""} ${a.usuario?.nombre || ""}`.trim(),
+      alumno_apellido: a.usuario?.apellido,
+      alumno_nombre_prop: a.usuario?.nombre,
       id_estado: a.Asistencia?.[0]?.id_estado || null,
     }));
 

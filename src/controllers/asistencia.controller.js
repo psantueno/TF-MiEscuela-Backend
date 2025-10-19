@@ -61,7 +61,9 @@ export const obtenerAsistenciasCursoFecha = async (req, res) => {
       id_estado: a.id_estado,
       estado_nombre: a.AsistenciaEstado?.descripcion,
       alumno_id: a.Alumno?.id_alumno,
-      alumno_nombre: `${a.Alumno?.usuario?.nombre || ""} ${a.Alumno?.usuario?.apellido || ""}`.trim(),
+      alumno_nombre: `${a.Alumno?.usuario?.apellido || ""} ${a.Alumno?.usuario?.nombre || ""}`.trim(),
+      alumno_apellido: a.Alumno?.usuario?.apellido,
+      alumno_nombre_prop: a.Alumno?.usuario?.nombre,
       curso_anio: a.Alumno?.curso?.anio_escolar,
       curso_division: a.Alumno?.curso?.division,
     }));
@@ -106,7 +108,9 @@ export const obtenerAsistenciasCursoEntreFechas = async (req, res) => {
       id_estado: a.id_estado,
       estado_nombre: a.AsistenciaEstado?.descripcion,
       alumno_id: a.Alumno?.id_alumno,
-      alumno_nombre: `${a.Alumno?.usuario?.nombre || ""} ${a.Alumno?.usuario?.apellido || ""}`.trim(),
+      alumno_nombre: `${a.Alumno?.usuario?.apellido || ""} ${a.Alumno?.usuario?.nombre || ""}`.trim(),
+      alumno_apellido: a.Alumno?.usuario?.apellido,
+      alumno_nombre_prop: a.Alumno?.usuario?.nombre,
       curso_anio: a.Alumno?.curso?.anio_escolar,
       curso_division: a.Alumno?.curso?.division,
     }));
@@ -151,7 +155,9 @@ export const obtenerAsistenciasAlumnoEntreFechas = async (req, res) => {
       id_estado: a.id_estado,
       estado_nombre: a.AsistenciaEstado?.descripcion,
       alumno_id: a.Alumno?.id_alumno,
-      alumno_nombre: `${a.Alumno?.usuario?.nombre || ""} ${a.Alumno?.usuario?.apellido || ""}`.trim(),
+      alumno_nombre: `${a.Alumno?.usuario?.apellido || ""} ${a.Alumno?.usuario?.nombre || ""}`.trim(),
+      alumno_apellido: a.Alumno?.usuario?.apellido,
+      alumno_nombre_prop: a.Alumno?.usuario?.nombre,
       curso_anio: a.Alumno?.Curso?.anio_escolar,
       curso_division: a.Alumno?.Curso?.division, 
     }));
