@@ -18,6 +18,7 @@ import alumnoRoutes from "./routes/alumno.routes.js"
 import materiaRoutes from "./routes/materia.routes.js";
 import calificacionRoutes from "./routes/calificacion.routes.js";
 import tutorRoutes from "./routes/tutor.routes.js";
+import cicloLectivoRoutes from "./routes/cicloLectivo.routes.js";
 
 // =================================================
 
@@ -58,6 +59,7 @@ app.use("/api/alumnos", alumnoRoutes )
 app.use("/api/materias", materiaRoutes);
 app.use("/api/calificaciones", calificacionRoutes);
 app.use("/api/tutores", tutorRoutes);
+app.use("/api/ciclos-lectivos", cicloLectivoRoutes);
 
 // ──────────────── Manejo de errores ────────────────
 app.use(errorHandler);
