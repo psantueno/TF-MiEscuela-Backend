@@ -1,4 +1,5 @@
-import { Materia, Curso, Alumno, Usuario, Docente, MateriasCurso, AlumnosCursos, sequelize} from "../models/index.js";
+import { Materia, Curso, Alumno, Usuario, Docente, MateriasCurso, AlumnosCursos, CiclosLectivos, sequelize} from "../models/index.js";
+import { Op } from "sequelize";
 
 /** Retorna los cursos según el rol del usuario
  * Administrador y Director: todos los cursos
@@ -29,7 +30,10 @@ export const getCursos = async (user) => {
         });
 
         const cursos = await Curso.findAll({
-            where: { ciclo_lectivo: cicloActual },
+            where: { 
+                '$cicloLectivo.anio$': cicloActual.toString(),
+                '$materiasCurso.docentes.id_docente$': docente.id_docente
+            },
             include: [
                 {
                     model: MateriasCurso,
@@ -38,10 +42,14 @@ export const getCursos = async (user) => {
                         {
                             model: Docente,
                             as: 'docentes',
-                            where: { id_docente: docente.id_docente },
                             attributes: []
                         }
                     ],
+                    attributes: []
+                },
+                {
+                    model: CiclosLectivos,
+                    as: 'cicloLectivo',
                     attributes: []
                 }
             ],
@@ -49,7 +57,6 @@ export const getCursos = async (user) => {
                 'id_curso',
                 'anio_escolar',
                 'division',
-                'ciclo_lectivo'
             ],
             order: [
                 ['anio_escolar', 'ASC'],
@@ -60,71 +67,74 @@ export const getCursos = async (user) => {
     }
 }
 
-export const getMateriasPorCurso = async (idCurso) => {
-    /*const materias = await Curso.findByPk(idCurso,{
-        include: [
-            {
-                model: Materia,
-                as: 'materias',
-                through: { attributes: [] },
-                attributes: ['id_materia', 'nombre']
-            }
-        ]
-    }).then(curso => curso ? curso.materias : []);
-    return materias;*/
-
-    const materias = await Materia.findAll({
-    include: [
-        {
-            model: MateriasCurso,
-            as: 'materiasCurso',
+export const getMateriasPorCurso = async (idCurso, user) => {
+    if(user.rol === "Administrador" || user.rol === "Director"){
+        const materias = await Materia.findAll({
             include: [
                 {
-                    model: Curso,
-                    as: 'curso',
-                    where: {
-                        id_curso: idCurso
-                    },
+                    model: MateriasCurso,
+                    as: 'materiasCurso',
+                    include: [
+                        {
+                            model: Curso,
+                            as: 'curso',
+                            attributes: []
+                        }
+                    ],
                     attributes: []
                 }
             ],
-            attributes: []
-        }
-    ],
-    attributes: [
-        'id_materia',
-        'nombre',
-    ],
-    });
+            attributes: [
+                'id_materia',
+                'nombre',
+            ],
+            where: sequelize.where(sequelize.col('materiasCurso.curso.id_curso'), idCurso),
+            order: [['nombre', 'ASC']]
+        });
 
-    return materias;
+        return materias;
+    }
+    if(user.rol === "Docente"){
+        const docente = await Docente.findOne({
+            where: { id_usuario: user.id_usuario },
+            attributes: ['id_docente']
+        });
+        const materias = await Materia.findAll({
+            include: [
+                {
+                    model: MateriasCurso,
+                    as: 'materiasCurso',
+                    include: [
+                        {
+                            model: Curso,
+                            as: 'curso',
+                            attributes: []
+                        },
+                        {
+                            model: Docente,
+                            as: 'docentes',
+                            attributes: []
+                        }
+                    ],
+                    attributes: []
+                }
+            ],
+            attributes: [
+                'id_materia',
+                'nombre',
+            ],
+            where: {
+                '$materiasCurso.curso.id_curso$': idCurso,
+                '$materiasCurso.docentes.id_docente$': docente.id_docente,
+            },
+            order: [['nombre', 'ASC']]
+        });
+
+        return materias;
+    }
 }
 
 export const getAlumnosPorCurso = async (idCurso) => {
-    /*const alumnos = await Curso.findByPk(idCurso, {
-        include: [
-            {
-                model: Alumno,
-                as: 'alumnos',
-                attributes: ['id_alumno'],
-                include: [
-                    { 
-                        model: Usuario, 
-                        as: 'usuario',
-                        attributes: ['nombre_completo']
-                    },
-                    {
-                        model: Curso,
-                        as: 'curso',
-                        attributes: ['id_curso', 'anio_escolar', 'division']
-                    }
-                ]
-            }
-        ],
-        order: [[{ model: Alumno, as: 'alumnos' }, { model: Usuario, as: 'usuario' }, 'nombre_completo', 'ASC']]
-    }).then(curso => curso ? curso.alumnos : []);
-    return alumnos;*/
-
     const alumnos = await Alumno.findAll({
         include: [
             {

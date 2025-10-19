@@ -81,7 +81,8 @@ export const eliminarCurso = async (req, res) => {
 export const getMateriasPorCurso = async (req, res) => {
   try {
     const { id } = req.params;
-    const materias = await cursoService.getMateriasPorCurso(id);
+    const user = req.usuario;
+    const materias = await cursoService.getMateriasPorCurso(id, user);
     res.json(materias);
   } catch (error) {
     console.error(error);

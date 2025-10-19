@@ -8,6 +8,8 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', calificacionController.getCalificaciones);
+router.get('/tipos', calificacionController.getTiposCalificacion);
+router.get('/alumno/:id', calificacionController.getCalificacionesPorAlumno);
 router.put('/', calificacionController.updateManyCalificaciones);
 router.post('/', calificacionController.createManyCalificaciones);
 
