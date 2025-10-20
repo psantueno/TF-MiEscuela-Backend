@@ -169,10 +169,17 @@ export const getTiposCalificacion = async () => {
 }
 
 export const updateManyCalificaciones = async (calificaciones, user) => {
-    const docente = await Docente.findOne({
-        where: { id_usuario: user.id_usuario },
-        attributes: ['id_docente']
-    });
+    let idDocente = null;
+    if(user.rol !== "Docente") idDocente = calificaciones[0].id_docente;
+    if(user.rol === "Docente"){
+        const docente = await Docente.findOne({
+            where: { id_usuario: user.id_usuario },
+            attributes: ['id_docente']
+        });
+        idDocente = docente.id_docente;
+    }
+
+    if(!idDocente) throw new Error("No se pudo determinar el docente para actualizar las calificaciones.");
 
     const updatePromises = calificaciones.map(calificacion => {
         const { id_calificacion, ...updateData } = calificacion;
@@ -180,7 +187,7 @@ export const updateManyCalificaciones = async (calificaciones, user) => {
             nota: parseFloat(updateData.nota),
             observaciones: updateData.observaciones,
             id_tipo_calificacion: updateData.id_tipo_calificacion,
-            id_docente: docente.id_docente,
+            id_docente: idDocente,
             fecha: new Date()
         }, { where: { id_calificacion } });
     });
@@ -188,10 +195,18 @@ export const updateManyCalificaciones = async (calificaciones, user) => {
 }
 
 export const createManyCalificaciones = async (calificaciones, user) => {
-    const docente = await Docente.findOne({
-        where: { id_usuario: user.id_usuario },
-        attributes: ['id_docente']
-    });
+        let idDocente = null;
+
+        if(user.rol !== "Docente") idDocente = calificaciones[0].id_docente;
+        if(user.rol === "Docente"){
+            const docente = await Docente.findOne({
+                where: { id_usuario: user.id_usuario },
+                attributes: ['id_docente']
+            });
+            idDocente = docente.id_docente;
+        }
+
+    if(!idDocente) throw new Error("No se pudo determinar el docente para actualizar las calificaciones.");
 
     const createPromises = calificaciones.map(async (calificacion) => {
         const materiaCurso = await MateriasCurso.findOne({
@@ -203,7 +218,7 @@ export const createManyCalificaciones = async (calificaciones, user) => {
 
         return Calificacion.create({
             id_alumno: calificacion.id_alumno,
-            id_docente: docente.id_docente,
+            id_docente: idDocente,
             id_materia_curso: materiaCurso.id_materia_curso,
             id_tipo_calificacion: calificacion.id_tipo_calificacion,
             ciclo_lectivo: new Date().getFullYear(),
