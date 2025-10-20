@@ -37,7 +37,7 @@ app.use(morgan("dev")); // Logs de peticiones
 // Limitador de requests (anti fuerza bruta/DDoS)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 150, // 100 requests por IP
+  max: 1000, // 100 requests por IP
   message: "⚠️ Demasiadas solicitudes, intenta más tarde."
 });
 app.use("/api", limiter);
