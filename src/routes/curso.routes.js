@@ -9,6 +9,7 @@ import {
   eliminarCurso,
   getMateriasPorCurso,
   getAlumnosPorCurso,
+  getDocentesPorCurso,
   getCursos
 } from "../controllers/curso.controller.js";
 
@@ -30,6 +31,9 @@ router.get("/:id/materias", getMateriasPorCurso);
 
 // GET /api/cursos/:id/alumnos
 router.get("/:id/alumnos", getAlumnosPorCurso);
+
+// GET /api/cursos/:id/docentes
+router.get("/:id/docentes", getDocentesPorCurso);
 
 // POST /api/cursos
 router.post("/", crearCurso);

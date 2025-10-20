@@ -101,3 +101,15 @@ export const getAlumnosPorCurso = async (req, res) => {
     res.status(500).json({ error: "Error obteniendo alumnos por curso" });
   }
 }
+
+// Obtener docentes por curso
+export const getDocentesPorCurso = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const docentes = await cursoService.getDocentesPorCurso(id);
+    res.json(docentes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error obteniendo docentes por curso" });
+  }
+}

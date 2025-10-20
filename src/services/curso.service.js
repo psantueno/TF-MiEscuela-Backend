@@ -155,3 +155,50 @@ export const getAlumnosPorCurso = async (idCurso) => {
 
     return alumnos;
 };
+
+export const getDocentesPorCurso = async (idCurso) => {
+    const docentes = await Docente.findAll({
+        include: [
+            {
+                model: MateriasCurso,
+                as: 'materiasCurso',
+                where: { id_curso: idCurso },
+                through: {
+                    attributes: ['fecha_inicio', 'fecha_fin'],
+                    where: {
+                        // Docentes activos actualmente
+                        [Op.and]: [
+                            { fecha_inicio: { [Op.lte]: sequelize.fn('NOW') } },
+                            {
+                                [Op.or]: [
+                                    { fecha_fin: { [Op.gte]: sequelize.fn('NOW') } },
+                                    { fecha_fin: null } // sin fecha de fin => sigue activo
+                                ]
+                            }
+                        ]
+                    }
+                },
+                include: [
+                    {
+                        model: Curso,
+                        as: 'curso',
+                        attributes: []
+                    },
+                    {
+                        model: Materia,
+                        as: 'materia',
+                        attributes: ['nombre', 'id_materia']
+                    }
+                ]
+            },
+            {
+                model: Usuario,
+                as: 'usuario',
+                attributes: ['apellido','nombre']
+            }
+        ],
+        attributes: ['id_docente'],
+    });
+
+    return docentes;
+};
