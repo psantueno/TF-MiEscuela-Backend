@@ -2,11 +2,11 @@ import * as usuarioService from '../services/usuario.service.js';
 
 export const getUsuarios = async (req, res, next) => {
     try{
-        const { page = 1, perPage = 10, nombre, apellido, id_rol } = req.query;
+        const { page = 1, perPage = 10, numero_documento, id_rol } = req.query;
         const limit = parseInt(perPage);
         const offset = (parseInt(page) - 1) * limit;
 
-        const { users, total } = await usuarioService.getUsuarios(limit, offset, { nombre, apellido, id_rol });
+        const { users, total } = await usuarioService.getUsuarios(limit, offset, { numero_documento, id_rol });
 
         res.status(200).json({ data: users, total });
     }catch(error){
