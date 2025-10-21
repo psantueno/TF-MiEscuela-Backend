@@ -4,6 +4,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { sequelize } from "./config/database.js";
+// Inicializa asociaciones entre modelos
+import "./models/index.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import cookieParser from "cookie-parser";
 

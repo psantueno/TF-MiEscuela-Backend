@@ -10,6 +10,7 @@ router.use(authMiddleware);
 
 router.get("/", validateGetUsuarios, usuarioController.getUsuarios);
 router.get("/sin-rol", validateGetUsuarios, usuarioController.getUsuariosSinRol);
+router.get("/con-rol", validateGetUsuarios, usuarioController.getUsuariosConRol);
 router.get("/:id_usuario", usuarioController.getUsuario);
 router.post("/", validateCreateUsuario, usuarioController.createUsuario);
 router.put("/:id_usuario", validateUpdateUsuario, usuarioController.updateUsuario);

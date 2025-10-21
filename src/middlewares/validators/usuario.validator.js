@@ -76,6 +76,23 @@ export const validateGetUsuarios = (req, res, next) => {
             page: req.query.page ? parseInt(req.query.page) : 1,
             perPage: req.query.perPage ? parseInt(req.query.perPage) : 10
         });
+        // Extra validations para filtros opcionales (solo ignorar strings vacíos)
+        if (typeof req.query.id_rol !== 'undefined') {
+            const raw = String(req.query.id_rol).trim();
+            if (raw !== '') {
+                const idRol = parseInt(raw, 10);
+                if (Number.isNaN(idRol) || idRol < 1) {
+                    throw new ValidationError("ID de rol invalido");
+                }
+                req.query.id_rol = idRol;
+            }
+        }
+        if (typeof req.query.numero_documento !== 'undefined') {
+            const raw = String(req.query.numero_documento).trim();
+            if (raw === '') {
+                delete req.query.numero_documento;
+            }
+        }
         next();
     }catch(error){
         const err = errorHandler(error, z);

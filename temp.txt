@@ -1,0 +1,71 @@
+                {
+                    model: Rol,
+                    as: "roles",
+                    through: { attributes: [] },
+                    attributes: ["id_rol", "nombre_rol"]
+                },
+            ]
+        });
+
+        await user.update({
+            nombre: data.nombre,
+            apellido: data.apellido,
+            numero_documento: data.numero_documento,
+            legajo: data.legajo,
+            email: data.email,
+            telefono: data.telefono,
+            domicilio: data.domicilio,
+            fecha_nacimiento: data.fecha_nacimiento,
+            genero: data.genero
+        }, { transaction: t });
+        // Role changes removed: this endpoint no longer updates roles
+        
+        await t.commit();
+
+        const updatedUser = await Usuario.findByPk(id_usuario, { 
+            include: [
+                {
+                    model: Rol,
+                    as: "roles",
+                    through: { attributes: [] },
+                    attributes: ["id_rol", "nombre_rol"]
+                },
+            ] 
+        });
+
+        return updatedUser;
+    }catch(error){
+        await t.rollback();
+        throw new DatabaseError(error.message);
+    }
+}
+
+export const deleteUsuario = async (id_usuario) => {
+    const t = await sequelize.transaction();
+    try {
+        const user = await Usuario.findByPk(id_usuario, { 
+            include: [
+                {
+                    model: Rol,
+                    as: "roles",
+                    through: { attributes: [] },
+                    attributes: ["id_rol", "nombre_rol"]
+                },
+            ]
+        });
+
+        // Clean up role relations if any exist
+        await UsuarioRol.destroy({ where: { id_usuario: user.id_usuario }, transaction: t });
+        if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
+            for (const role of user.roles) {
+                await deleteUserInRoleTable(role.id_rol, user.id_usuario, t);
+            }
+        }
+        await user.destroy({ transaction: t });
+
+        await t.commit();
+    } catch (error) {
+        await t.rollback();
+        throw new DatabaseError(error.message);
+    }
+}

@@ -158,6 +158,7 @@ export const getUsuariosSinRol = async (limit, offset, filters = {}) => {
     const whereClause = {};
     if (filters.nombre) whereClause.nombre = { [Op.iLike]: `%${filters.nombre}%` };
     if (filters.apellido) whereClause.apellido = { [Op.iLike]: `%${filters.apellido}%` };
+    if (filters.numero_documento) whereClause.numero_documento = { [Op.iLike]: `%${filters.numero_documento}%` };
 
     const usuariosConRol = await UsuarioRol.findAll({ attributes: ['id_usuario'] });
     const idsUsuariosConRol = usuariosConRol.map(ur => ur.id_usuario);
@@ -165,10 +166,16 @@ export const getUsuariosSinRol = async (limit, offset, filters = {}) => {
         whereClause.id_usuario = { [Op.notIn]: idsUsuariosConRol };
     }
 
+    // Orden dinámico con default apellido ASC y desempate por nombre
+    const allowedSortFields = ['apellido', 'nombre', 'numero_documento', 'email', 'id_usuario', 'legajo'];
+    const sortField = (filters.sort && allowedSortFields.includes(String(filters.sort))) ? String(filters.sort) : 'apellido';
+    const sortOrder = (filters.order && String(filters.order).toUpperCase() === 'DESC') ? 'DESC' : 'ASC';
+    const orderClause = [[sortField, sortOrder], ['apellido', 'ASC'], ['nombre', 'ASC']];
+
     const { rows: users, count: total } = await Usuario.findAndCountAll({
         limit,
         offset,
-        order: [["id_usuario", "ASC"]],
+        order: orderClause,
         include: [
             {
                 model: Rol,
@@ -183,6 +190,42 @@ export const getUsuariosSinRol = async (limit, offset, filters = {}) => {
 
     return { users, total };
 }
+
+export const getUsuariosConRol = async (limit, offset, filters = {}) => {
+  const whereClause = {};
+  if (filters.nombre) whereClause.nombre = { [Op.iLike]: `%${filters.nombre}%` };
+  if (filters.apellido) whereClause.apellido = { [Op.iLike]: `%${filters.apellido}%` };
+  if (filters.numero_documento) whereClause.numero_documento = { [Op.iLike]: `%${filters.numero_documento}%` };
+
+  // Filtrado por rol
+  const whereUsuarioRol = {};
+  if (filters.id_rol) whereUsuarioRol.id_rol = filters.id_rol;
+  const usuariosConRol = await UsuarioRol.findAll({ where: whereUsuarioRol, attributes: ['id_usuario'] });
+  const idsUsuariosConRol = usuariosConRol.map(ur => ur.id_usuario);
+  whereClause.id_usuario = { [Op.in]: idsUsuariosConRol };
+
+  // 🆕 orden dinámico
+  const { rows: users, count: total } = await Usuario.findAndCountAll({
+    limit,
+    offset,
+    order: [[ (filters.sort && ['apellido','nombre','numero_documento','email','id_usuario','legajo'].includes(String(filters.sort)) ? String(filters.sort) : 'apellido'), ((filters.order && String(filters.order).toUpperCase() === 'DESC') ? 'DESC' : 'ASC') ], ['apellido','ASC'], ['nombre','ASC']],
+    include: [
+      {
+        model: Rol,
+        as: "roles",
+        through: { attributes: [] },
+        attributes: ["id_rol", "nombre_rol"],
+      },
+    ],
+    attributes: {
+      include: ["numero_documento"],
+      exclude: ["contrasenia", "creado_el", "actualizado_el"],
+    },
+    where: { ...whereClause },
+  });
+
+  return { users, total };
+};
 
 export const assignRolUsuario = async (id_usuario, id_rol) => {
     const t = await sequelize.transaction();
@@ -249,6 +292,11 @@ export const unassignRolUsuario = async (id_usuario) => {
         await t.commit();
     } catch (error) {
         await t.rollback();
+        const pgCode = error?.original?.code || error?.parent?.code || error?.code;
+        const name = error?.name || '';
+        if (name.includes('ForeignKeyConstraintError') || pgCode === '23503') {
+            throw new DatabaseError('No se puede quitar el rol porque el usuario tiene registros asociados. Revisá sus vínculos (por ejemplo, cursadas, calificaciones, asignaciones) antes de quitar el rol.', 409);
+        }
         throw new DatabaseError(error.message);
     }
 }

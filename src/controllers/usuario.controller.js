@@ -16,11 +16,30 @@ export const getUsuarios = async (req, res, next) => {
 
 export const getUsuariosSinRol = async (req, res, next) => {
     try{
-        const { page = 1, perPage = 10, nombre, apellido } = req.query;
+        const { page = 1, perPage = 10, nombre, apellido, numero_documento, dni, sort, order } = req.query;
+        const limit = parseInt(perPage);
+        const offset = (parseInt(page) - 1) * limit;
+        const ndoc = numero_documento || dni;
+
+        const { users, total } = await usuarioService.getUsuariosSinRol(limit, offset, { nombre, apellido, numero_documento: ndoc, sort, order });
+
+        res.status(200).json({ data: users, total });
+    }catch(error){
+        next(error);
+    }
+}
+
+export const getUsuariosConRol = async (req, res, next) => {
+    try{
+        const { page = 1, perPage = 10, nombre, apellido, numero_documento, id_rol, sort, order } = req.query;
         const limit = parseInt(perPage);
         const offset = (parseInt(page) - 1) * limit;
 
-        const { users, total } = await usuarioService.getUsuariosSinRol(limit, offset, { nombre, apellido });
+        const { users, total } = await usuarioService.getUsuariosConRol(
+            limit,
+            offset,
+            { nombre, apellido, numero_documento, id_rol, sort, order }
+        );
 
         res.status(200).json({ data: users, total });
     }catch(error){
