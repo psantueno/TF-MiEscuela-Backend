@@ -9,7 +9,7 @@ import { AsesorPedagogico } from "../models/AsesorPedagogico.js";
 import { Alumno } from "../models/Alumno.js";
 import { Tutor } from "../models/Tutor.js";
 import { sequelize } from '../config/database.js';
-import { Op } from 'sequelize';
+import { Op, where } from 'sequelize';
 import bcrypt from 'bcrypt';
 import { DatabaseError } from '../utils/databaseError.util.js';
 
@@ -70,8 +70,7 @@ const deleteUserInRoleTable = async (oldRole, userId, transaction) => {
 
 export const getUsuarios = async (limit, offset, filters) => {
     const whereClause = {};
-    if (filters.nombre) whereClause.nombre = { [Op.iLike]: `%${filters.nombre}%` };
-    if (filters.apellido) whereClause.apellido = { [Op.iLike]: `%${filters.apellido}%` };
+    if(filters.numero_documento) whereClause.numero_documento = { [Op.iLike]: `%${filters.numero_documento}%` };
 
     if(filters.id_rol){
         const usuariosConRol = await UsuarioRol.findAll({ where: { id_rol: filters.id_rol }, attributes: ['id_usuario'] });
@@ -92,7 +91,8 @@ export const getUsuarios = async (limit, offset, filters) => {
             },
         ],
         attributes: { exclude: ["contrasenia", "creado_el", "actualizado_el"] },
-        where: { ...whereClause }
+        where: { ...whereClause },
+        order: [["apellido", "ASC"], ["nombre", "ASC"]]
     });
     return { users, total };
 }
@@ -156,8 +156,7 @@ export const createUsuario = async (data) => {
 
 export const getUsuariosSinRol = async (limit, offset, filters = {}) => {
     const whereClause = {};
-    if (filters.nombre) whereClause.nombre = { [Op.iLike]: `%${filters.nombre}%` };
-    if (filters.apellido) whereClause.apellido = { [Op.iLike]: `%${filters.apellido}%` };
+    if(filters.numero_documento) whereClause.numero_documento = { [Op.iLike]: `%${filters.numero_documento}%` };
 
     const usuariosConRol = await UsuarioRol.findAll({ attributes: ['id_usuario'] });
     const idsUsuariosConRol = usuariosConRol.map(ur => ur.id_usuario);
@@ -178,7 +177,8 @@ export const getUsuariosSinRol = async (limit, offset, filters = {}) => {
             },
         ],
         attributes: { include: ["numero_documento"], exclude: ["contrasenia", "creado_el", "actualizado_el"] },
-        where: { ...whereClause }
+        where: { ...whereClause },
+        order: [["apellido", "ASC"], ["nombre", "ASC"]]
     });
 
     return { users, total };
@@ -249,7 +249,10 @@ export const unassignRolUsuario = async (id_usuario) => {
         await t.commit();
     } catch (error) {
         await t.rollback();
-        throw new DatabaseError(error.message);
+        const customMessage = error.name === 'SequelizeForeignKeyConstraintError'
+            ? 'No se puede eliminar el usuario porque está asociado a otros registros.'
+            : error.message;
+        throw new DatabaseError(customMessage);
     }
 }
 
@@ -326,6 +329,9 @@ export const deleteUsuario = async (id_usuario) => {
         await t.commit();
     } catch (error) {
         await t.rollback();
-        throw new DatabaseError(error.message);
+        const customMessage = error.name === 'SequelizeForeignKeyConstraintError'
+            ? 'No se puede eliminar el usuario porque está asociado a otros registros.'
+            : error.message;
+        throw new DatabaseError(customMessage);
     }
 }
