@@ -18,6 +18,8 @@ import { AuxiliaresCurso } from "./AuxiliaresCurso.js";
 import { CiclosLectivos } from "./CiclosLectivos.js";
 import { DocentesMateriasCurso } from "./DocentesMateriasCurso.js";
 import { TipoCalificacion } from "./TipoCalificacion.js";
+import { InformePedagogico } from "./InformePedagogico.js";
+import { AsesorPedagogico } from "./AsesorPedagogico.js";
 
 // Alumno - usuario
 Alumno.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
@@ -33,6 +35,11 @@ Usuario.hasOne(Docente, { foreignKey: "id_usuario", as: "docente" });
 Tutor.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
 // Usuario - Tutor
 Usuario.hasOne(Tutor, { foreignKey: "id_usuario", as: "tutor" });
+
+// AsesorPedagogico - Usuario
+AsesorPedagogico.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
+// Usuario - AsesorPedagogico
+Usuario.hasOne(AsesorPedagogico, { foreignKey: "id_usuario", as: "asesorPedagogico" });
 
 // Curso - Alumno (Muchos a Muchos) a través de AlumnosCursos
 Curso.belongsToMany(Alumno, {
@@ -157,15 +164,6 @@ Calificacion.belongsTo(MateriasCurso, {
   as: 'materiaCurso'
 });
 
-// Calificacion - Alumno
-// Calificacion.belongsTo(Alumno, { foreignKey: "id_alumno", as: "alumno" });
-// Calificacion - Materia
-// Calificacion.belongsTo(Materia, { foreignKey: "id_materia", as: "materia" });
-// Calificacion - Curso
-// Calificacion.belongsTo(Curso, { foreignKey: "id_curso", as: "curso" });
-// Calificacion - Docente
-// Calificacion.belongsTo(Docente, { foreignKey: "id_docente", as: "docente" });
-
 // AuxiliaresCurso - Curso (Muchos a 1)
 AuxiliaresCurso.belongsTo(Curso, {
   foreignKey: 'id_curso',
@@ -195,6 +193,26 @@ Usuario.belongsToMany(Rol,
   }
 )
 
+// InformePedagogico - AsesorPedagogico (Muchos a 1)
+InformePedagogico.belongsTo(AsesorPedagogico, { foreignKey: "id_asesor", as: "asesorPedagogico" });
+// AsesorPedagogico - InformePedagogico (1 a Muchos)
+AsesorPedagogico.hasMany(InformePedagogico, { foreignKey: "id_asesor", as: "informesPedagogicos" });
+
+// InformePedagogico - Alumno (Muchos a 1)
+InformePedagogico.belongsTo(Alumno, { foreignKey: "id_alumno", as: "alumno" });
+// Alumno - InformePedagogico (1 a Muchos)
+Alumno.hasMany(InformePedagogico, { foreignKey: "id_alumno", as: "informesPedagogicos" });
+
+// InformePedagogico - Docente (Muchos a 1)
+InformePedagogico.belongsTo(Docente, { foreignKey: "id_docente", as: "docente" });
+// Docente - InformePedagogico (1 a Muchos)
+Docente.hasMany(InformePedagogico, { foreignKey: "id_docente", as: "informesPedagogicos" });
+
+// InformePedagogico - MateriasCurso (Muchos a 1)
+InformePedagogico.belongsTo(MateriasCurso, { foreignKey: "id_materia_curso", as: "materiaCurso" });
+// MateriasCurso - InformePedagogico (1 a Muchos)
+MateriasCurso.hasMany(InformePedagogico, { foreignKey: "id_materia_curso", as: "informesPedagogicos" });
+
 export {
   sequelize,
   Usuario,
@@ -214,5 +232,7 @@ export {
   Rol,
   AuxiliaresCurso,
   CiclosLectivos,
-  TipoCalificacion
+  TipoCalificacion,
+  InformePedagogico,
+  AsesorPedagogico
 };
