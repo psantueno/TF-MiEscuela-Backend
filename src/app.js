@@ -21,7 +21,8 @@ import materiaRoutes from "./routes/materia.routes.js";
 import calificacionRoutes from "./routes/calificacion.routes.js";
 import tutorRoutes from "./routes/tutor.routes.js";
 import cicloLectivoRoutes from "./routes/cicloLectivo.routes.js";
-
+import informePedagogicoRoutes from "./routes/informePedagogico.js";
+import asesorPedagogicoRoutes from "./routes/asesorPedagogico.routes.js";
 // =================================================
 
 const app = express();
@@ -62,7 +63,8 @@ app.use("/api/materias", materiaRoutes);
 app.use("/api/calificaciones", calificacionRoutes);
 app.use("/api/tutores", tutorRoutes);
 app.use("/api/ciclos-lectivos", cicloLectivoRoutes);
-
+app.use("/api/informes-pedagogicos", informePedagogicoRoutes);
+app.use("/api/asesores-pedagogicos", asesorPedagogicoRoutes);
 // ──────────────── Manejo de errores ────────────────
 app.use(errorHandler);
 

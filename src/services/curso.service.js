@@ -4,10 +4,10 @@ import { Op } from "sequelize";
 /** Retorna los cursos según el rol del usuario
  * Administrador y Director: todos los cursos
  * Docente: solo los cursos donde dicta clase
+ * Asesor Pedagógico: solo cursos asignados (pendiente)
  */
 export const getCursos = async (user) => {
-    if(user.rol === "Administrador" || user.rol === "Director"){
-        console.log("Obteniendo todos los cursos para rol:", user.rol);
+    if(user.rol === "Administrador" || user.rol === "Director" || user.rol === "Asesor Pedagogico"){
         const cursos = await Curso.findAll({
             attributes: [
                 [sequelize.fn('MAX', sequelize.col('id_curso')), 'id_curso'],
@@ -21,7 +21,6 @@ export const getCursos = async (user) => {
     }
     
     if(user.rol === "Docente"){
-        console.log("Obteniendo todos los cursos para rol:", user.rol);
         const cicloActual = new Date().getFullYear();
 
         const docente = await Docente.findOne({
@@ -65,10 +64,11 @@ export const getCursos = async (user) => {
         });
         return cursos;
     }
+    return [];
 }
 
 export const getMateriasPorCurso = async (idCurso, user) => {
-    if(user.rol === "Administrador" || user.rol === "Director"){
+    if(user.rol === "Administrador" || user.rol === "Director" || user.rol === "Asesor Pedagogico"){
         const materias = await Materia.findAll({
             include: [
                 {
