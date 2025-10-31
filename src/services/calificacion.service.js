@@ -11,6 +11,7 @@ const mapCalificaciones = (calificaciones) => {
             fecha: plainCalificacion.fecha,
             publicado: plainCalificacion.publicado,
             materiaCurso: {
+                id_materia: plainCalificacion.materiaCurso.id_materia_curso,
                 materia: {
                     nombre: plainCalificacion.materiaCurso.materia.nombre
                 },
@@ -24,24 +25,24 @@ const mapCalificaciones = (calificaciones) => {
                 docentes: plainCalificacion.materiaCurso.docentes.map(docente => ({
                     id_docente: docente.id_docente,
                     rol: docente.DocentesMateriasCurso.rol_docente,
-                })),
-                alumno: {
-                    id_alumno: plainCalificacion.alumno.id_alumno,
-                    usuario: {
-                        nombre: plainCalificacion.alumno.usuario.nombre,
-                        apellido: plainCalificacion.alumno.usuario.apellido
-                    }
-                },
-                docente: {
-                    id_docente: plainCalificacion.docente.id_docente,
-                    usuario: {
-                        nombre: plainCalificacion.docente.usuario.nombre,
-                        apellido: plainCalificacion.docente.usuario.apellido
-                    }
-                },
-                tipoCalificacion: {
-                    descripcion: plainCalificacion.tipoCalificacion.descripcion
+                }))
+            },
+            alumno: {
+                id_alumno: plainCalificacion.alumno.id_alumno,
+                usuario: {
+                    nombre: plainCalificacion.alumno.usuario.nombre,
+                    apellido: plainCalificacion.alumno.usuario.apellido
                 }
+            },
+            docente: {
+                id_docente: plainCalificacion.docente.id_docente,
+                usuario: {
+                    nombre: plainCalificacion.docente.usuario.nombre,
+                    apellido: plainCalificacion.docente.usuario.apellido
+                }
+            },
+            tipoCalificacion: {
+                descripcion: plainCalificacion.tipoCalificacion.descripcion
             }
         };
     });
@@ -144,7 +145,7 @@ export const getCalificaciones = async (idCurso, idMateria, idAlumno, user) => {
         attributes: ['id_calificacion', 'nota', 'observaciones', 'fecha', 'publicado'],
     });
 
-    return calificaciones;
+    return mapCalificaciones(calificaciones);
 };
 
 export const getCalificacionesPorAlumno = async (idAlumno, user) => {
