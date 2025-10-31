@@ -1,5 +1,51 @@
+import { map } from "zod";
 import { Alumno, Docente, Usuario, Curso, Materia, Calificacion, MateriasCurso, TipoCalificacion, CiclosLectivos } from "../models/index.js";
 
+const mapCalificaciones = (calificaciones) => {
+    return calificaciones.map(calificacion => {
+        const plainCalificacion = calificacion.get({ plain: true });
+        return {
+            id_calificacion: plainCalificacion.id_calificacion,
+            nota: plainCalificacion.nota,
+            observaciones: plainCalificacion.observaciones,
+            fecha: plainCalificacion.fecha,
+            publicado: plainCalificacion.publicado,
+            materiaCurso: {
+                materia: {
+                    nombre: plainCalificacion.materiaCurso.materia.nombre
+                },
+                curso: {
+                    anio_escolar: plainCalificacion.materiaCurso.curso.anio_escolar,
+                    division: plainCalificacion.materiaCurso.curso.division,
+                    cicloLectivo: {
+                        anio: plainCalificacion.materiaCurso.curso.cicloLectivo.anio
+                    },
+                },
+                docentes: plainCalificacion.materiaCurso.docentes.map(docente => ({
+                    id_docente: docente.id_docente,
+                    rol: docente.DocentesMateriasCurso.rol_docente,
+                })),
+                alumno: {
+                    id_alumno: plainCalificacion.alumno.id_alumno,
+                    usuario: {
+                        nombre: plainCalificacion.alumno.usuario.nombre,
+                        apellido: plainCalificacion.alumno.usuario.apellido
+                    }
+                },
+                docente: {
+                    id_docente: plainCalificacion.docente.id_docente,
+                    usuario: {
+                        nombre: plainCalificacion.docente.usuario.nombre,
+                        apellido: plainCalificacion.docente.usuario.apellido
+                    }
+                },
+                tipoCalificacion: {
+                    descripcion: plainCalificacion.tipoCalificacion.descripcion
+                }
+            }
+        };
+    });
+}
 
 export const getCalificaciones = async (idCurso, idMateria, idAlumno, user) => {
     const materiasWhereClause = {id_curso: idCurso};
@@ -38,7 +84,7 @@ export const getCalificaciones = async (idCurso, idMateria, idAlumno, user) => {
                     as: 'docentes',
                     attributes: ['id_docente']
                 }
-            ]
+            ],
         },
         {
             model: Alumno,
@@ -94,7 +140,8 @@ export const getCalificaciones = async (idCurso, idMateria, idAlumno, user) => {
     const calificaciones = await Calificacion.findAll({
         include: includeBase,
         where: whereClause,
-        order: orderClause
+        order: orderClause,
+        attributes: ['id_calificacion', 'nota', 'observaciones', 'fecha', 'publicado'],
     });
 
     return calificaciones;
@@ -112,7 +159,8 @@ export const getCalificacionesPorAlumno = async (idAlumno, user) => {
                         as: 'usuario',
                         attributes: ['nombre', 'apellido']
                     }
-                ]
+                ],
+                attributes: { exclude: ['id_usuario', 'creado_el', 'actualizado_el'] }
             },
             {
                 model: MateriasCurso,
@@ -147,7 +195,8 @@ export const getCalificacionesPorAlumno = async (idAlumno, user) => {
                             }
                         ]
                     }
-                ]
+                ],
+                attributes: { exclude: ['id_materia_curso', 'id_materia', 'id_curso'] }
             },
             {
                 model: TipoCalificacion,
@@ -157,7 +206,8 @@ export const getCalificacionesPorAlumno = async (idAlumno, user) => {
         ],
         where: {
             id_alumno: idAlumno
-        }
+        },
+        attributes: ['id_calificacion', 'nota', 'observaciones', 'fecha', 'publicado'],
     });
 
     return calificaciones;

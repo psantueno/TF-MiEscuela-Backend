@@ -46,6 +46,10 @@ export const InformePedagogico = sequelize.define("InformePedagogico", {
     contenido: {
         type: DataTypes.TEXT,
         allowNull: false
+    },
+    titulo: {
+        type: DataTypes.STRING,
+        allowNull: false
     }
 },{
     tableName: "informes_pedagogicos",
