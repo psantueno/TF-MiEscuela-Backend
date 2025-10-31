@@ -48,6 +48,50 @@ const mapCalificaciones = (calificaciones) => {
     });
 }
 
+const mapCalificacionesPorAlumno = (calificaciones) => {
+    return calificaciones.map(calificacion => {
+        const plainCalificacion = calificacion.get({ plain: true });
+        return {
+            id_calificacion: plainCalificacion.id_calificacion,
+            nota: plainCalificacion.nota,
+            observaciones: plainCalificacion.observaciones,
+            fecha: plainCalificacion.fecha,
+            publicado: plainCalificacion.publicado,
+            alumno: {
+                id_alumno: plainCalificacion.alumno.id_alumno,
+                usuario: {
+                    nombre: plainCalificacion.alumno.usuario.nombre,
+                    apellido: plainCalificacion.alumno.usuario.apellido
+                }
+            },
+            materiaCurso:{
+                id_materia: plainCalificacion.materiaCurso.id_materia_curso,
+                materia: {
+                    nombre: plainCalificacion.materiaCurso.materia.nombre
+                },
+                curso: {
+                    anio_escolar: plainCalificacion.materiaCurso.curso.anio_escolar,
+                    division: plainCalificacion.materiaCurso.curso.division,
+                    cicloLectivo: {
+                        anio: plainCalificacion.materiaCurso.curso.cicloLectivo.anio
+                    },
+                },
+                docentes: plainCalificacion.materiaCurso.docentes.map(docente => ({
+                    id_docente: docente.id_docente,
+                    rol: docente.DocentesMateriasCurso.rol_docente,
+                    usuario: {
+                        nombre: docente.usuario.nombre,
+                        apellido: docente.usuario.apellido
+                    }
+                }))
+            },
+            tipoCalificacion: {
+                descripcion: plainCalificacion.tipoCalificacion.descripcion
+            }
+        }
+    });
+};
+
 export const getCalificaciones = async (idCurso, idMateria, idAlumno, user) => {
     const materiasWhereClause = {id_curso: idCurso};
     if (idMateria) materiasWhereClause.id_materia = idMateria;
@@ -161,7 +205,6 @@ export const getCalificacionesPorAlumno = async (idAlumno, user) => {
                         attributes: ['nombre', 'apellido']
                     }
                 ],
-                attributes: { exclude: ['id_usuario', 'creado_el', 'actualizado_el'] }
             },
             {
                 model: MateriasCurso,
@@ -197,7 +240,6 @@ export const getCalificacionesPorAlumno = async (idAlumno, user) => {
                         ]
                     }
                 ],
-                attributes: { exclude: ['id_materia_curso', 'id_materia', 'id_curso'] }
             },
             {
                 model: TipoCalificacion,
@@ -208,10 +250,9 @@ export const getCalificacionesPorAlumno = async (idAlumno, user) => {
         where: {
             id_alumno: idAlumno
         },
-        attributes: ['id_calificacion', 'nota', 'observaciones', 'fecha', 'publicado'],
     });
 
-    return calificaciones;
+    return mapCalificacionesPorAlumno(calificaciones);
 }
 
 export const getTiposCalificacion = async () => {
