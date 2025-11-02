@@ -59,10 +59,9 @@ Alumno.belongsToMany(Curso, {
 
 // Alumno - asistencia
 Alumno.hasMany(Asistencia, { foreignKey: "id_alumno" });
-// Alumno - curso
-Alumno.belongsTo(Curso, { foreignKey: "id_curso", as: "curso" });
-// Alumno - curso
-// Curso.hasMany(Alumno, { foreignKey: "id_curso", as: "alumnos" });
+// Relaciones directas sobre la tabla pivote para facilitar includes/filters
+AlumnosCursos.belongsTo(Alumno, { foreignKey: 'id_alumno', as: 'alumno' });
+AlumnosCursos.belongsTo(Curso, { foreignKey: 'id_curso', as: 'curso' });
 
 // asistencia - alumno
 Asistencia.belongsTo(Alumno, { foreignKey: "id_alumno" });

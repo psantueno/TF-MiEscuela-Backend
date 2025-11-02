@@ -1,5 +1,5 @@
 // controllers/alumno.controller.js
-import { Alumno, Usuario, Asistencia } from "../models/index.js";
+import { Alumno, Usuario, Asistencia, Curso } from "../models/index.js";
 import * as alumnoService from "../services/alumno.service.js";
 import { Op } from "sequelize";
 
@@ -24,8 +24,26 @@ export const obtenerAlumnosCursoPorFecha = async (req, res) => {
 
   try {
     const alumnos = await Alumno.findAll({
-      where: { id_curso },
       include: [
+        {
+          model: Curso,
+          as: 'cursos',
+          where: { id_curso },
+          attributes: [],
+          through: {
+            attributes: [],
+            where: {
+              [Op.and]: [
+                { fecha_inicio: { [Op.lte]: fecha } },
+                { [Op.or]: [
+                    { fecha_fin: { [Op.gte]: fecha } },
+                    { fecha_fin: null }
+                  ]
+                }
+              ]
+            }
+          }
+        },
         {
           model: Usuario,
           attributes: ["nombre", "apellido"],

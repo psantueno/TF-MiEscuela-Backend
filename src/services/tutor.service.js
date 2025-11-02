@@ -17,7 +17,7 @@ export const getHijos = async (idTutor) => {
                     },
                     {
                         model: Curso,
-                        as: 'curso',
+                        as: 'cursos',
                         attributes: ['id_curso', 'anio_escolar', 'division']
                     }
                 ]
