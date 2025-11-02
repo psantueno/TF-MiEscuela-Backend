@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { getCiclos, getCiclo, createCiclo, updateCiclo, deleteCiclo } from "../controllers/cicloLectivo.controller.js";
+import { cicloNoCerrado } from "../middlewares/isCicloEditable.middleware.js";
 import { validateCreateCiclo, validateUpdateCiclo, validateIdCiclo } from "../middlewares/validators/cicloLectivo.validator.js";
 
 const router = Router();
@@ -14,9 +15,9 @@ router.get("/:id_ciclo", validateIdCiclo, getCiclo);
 router.post("/", validateCreateCiclo, createCiclo);
 
 // PUT actualizar
-router.put("/:id_ciclo", validateIdCiclo, validateUpdateCiclo, updateCiclo);
+router.put("/:id_ciclo", validateIdCiclo, cicloNoCerrado, validateUpdateCiclo, updateCiclo);
 
 // DELETE eliminar
-router.delete("/:id_ciclo", validateIdCiclo, deleteCiclo);
+router.delete("/:id_ciclo", validateIdCiclo, cicloNoCerrado, deleteCiclo);
 
 export default router;
