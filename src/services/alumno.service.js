@@ -1,4 +1,5 @@
-import { Alumno, Usuario, Curso } from "../models/index.js";
+import { Alumno, Usuario, Curso, AlumnosCursos, CiclosLectivos, sequelize } from "../models/index.js";
+import { Op } from "sequelize";
 
 export const getAlumnos = async (idCurso) => {
     const include = [
@@ -22,4 +23,300 @@ export const getAlumnos = async (idCurso) => {
     });
 
     return alumnos;
+}
+
+export const getAlumnosSinCurso = async ({ apellido, nombre, numero_documento, id_ciclo, page = 1, perPage = 10 }) => {
+    const whereUsuario = {};
+    if (apellido) whereUsuario.apellido = { [Op.iLike]: `%${apellido}%` };
+    if (nombre) whereUsuario.nombre = { [Op.iLike]: `%${nombre}%` };
+    if (numero_documento) whereUsuario.numero_documento = { [Op.iLike]: `%${numero_documento}%` };
+
+    const limit = parseInt(page ? perPage : 0, 10) || 10;
+    const offset = (parseInt(page, 10) - 1) * limit;
+
+    const cicloId = Number(id_ciclo);
+    const cicloFilter = !Number.isNaN(cicloId) ? cicloId : parseInt(id_ciclo, 10);
+
+    const result = await Alumno.findAndCountAll({
+        include: [
+            { model: Usuario, as: 'usuario', attributes: ["nombre", "apellido", "numero_documento"], where: whereUsuario },
+        ],
+        attributes: ["id_alumno"],
+        // alumnos que NO tienen ninguna asignación en alumnos_cursos para el ciclo indicado
+        where: sequelize.literal(`NOT EXISTS (
+            SELECT 1
+            FROM alumnos_cursos ac
+            INNER JOIN cursos c ON c.id_curso = ac.id_curso
+            WHERE ac.id_alumno = "Alumno".id_alumno AND c.id_ciclo = ${isNaN(cicloFilter) ? -1 : cicloFilter}
+        )`),
+        order: [[{ model: Usuario, as: 'usuario' }, 'apellido', 'ASC'], [{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']],
+        distinct: true,
+        subQuery: false,
+        limit,
+        offset
+    });
+
+    const data = result.rows.map(a => ({
+        id_alumno: a.id_alumno,
+        id: a.id_alumno,
+        apellido: a.usuario?.apellido,
+        nombre: a.usuario?.nombre,
+        numero_documento: a.usuario?.numero_documento,
+    }));
+    return { data, total: result.count };
+}
+
+// Variante robusta por ciclo lectivo usando anti-join (LEFT JOIN + NULL)
+export const getAlumnosSinCursoByCiclo = async ({ apellido, nombre, numero_documento, id_ciclo, page = 1, perPage = 10 }) => {
+    const whereUsuario = {};
+    if (apellido) whereUsuario.apellido = { [Op.iLike]: `%${apellido}%` };
+    if (nombre) whereUsuario.nombre = { [Op.iLike]: `%${nombre}%` };
+    if (numero_documento) whereUsuario.numero_documento = { [Op.iLike]: `%${numero_documento}%` };
+
+    const limit = parseInt(page ? perPage : 0, 10) || 10;
+    const offset = (parseInt(page, 10) - 1) * limit;
+
+    const cicloId = Number.parseInt(id_ciclo, 10);
+    const cicloFilter = Number.isFinite(cicloId) ? cicloId : -1;
+
+    const result = await Alumno.findAndCountAll({
+        include: [
+            { model: Usuario, as: 'usuario', attributes: ["nombre", "apellido", "numero_documento"], where: whereUsuario },
+            {
+                model: Curso,
+                as: 'cursos',
+                attributes: [],
+                required: false,
+                where: { id_ciclo: cicloFilter },
+                through: { attributes: [] },
+            }
+        ],
+        attributes: ["id_alumno"],
+        where: { '$cursos.id_curso$': { [Op.is]: null } },
+        order: [[{ model: Usuario, as: 'usuario' }, 'apellido', 'ASC'], [{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']],
+        distinct: true,
+        subQuery: false,
+        limit,
+        offset,
+    });
+
+    const data = result.rows.map(a => ({
+        id_alumno: a.id_alumno,
+        id: a.id_alumno,
+        apellido: a.usuario?.apellido,
+        nombre: a.usuario?.nombre,
+        numero_documento: a.usuario?.numero_documento,
+    }));
+    return { data, total: result.count };
+}
+
+export const getAlumnosConCurso = async ({ apellido, nombre, numero_documento, id_ciclo, id_curso, page = 1, perPage = 10, modo }) => {
+    const whereUsuario = {};
+    if (apellido) whereUsuario.apellido = { [Op.iLike]: `%${apellido}%` };
+    if (nombre) whereUsuario.nombre = { [Op.iLike]: `%${nombre}%` };
+    if (numero_documento) whereUsuario.numero_documento = { [Op.iLike]: `%${numero_documento}%` };
+
+    const limit = parseInt(page ? perPage : 0, 10) || 10;
+    const offset = (parseInt(page, 10) - 1) * limit;
+
+    // Para modo 'cambio', considerar vigente por día: si fecha_fin es hoy, sigue visible
+    const hoy00 = new Date();
+    hoy00.setHours(0, 0, 0, 0);
+
+    const includeCurso = {
+        model: Curso,
+        as: 'cursos',
+        attributes: ['id_curso', 'anio_escolar', 'division', 'id_ciclo'],
+        required: true,
+        where: { id_ciclo, ...(id_curso ? { id_curso } : {}) },
+        through: {
+            attributes: [],
+            where: {
+                [Op.and]: [
+                    { fecha_inicio: { [Op.lte]: sequelize.fn('NOW') } },
+                    modo === 'cambio'
+                      ? { [Op.or]: [ { fecha_fin: { [Op.gte]: hoy00 } }, { fecha_fin: { [Op.is]: null } } ] }
+                      : { [Op.or]: [ { fecha_fin: { [Op.gte]: sequelize.fn('NOW') } }, { fecha_fin: { [Op.is]: null } } ] }
+                ]
+            }
+        }
+    };
+
+    const result = await Alumno.findAndCountAll({
+        include: [
+            { model: Usuario, as: 'usuario', attributes: ["nombre", "apellido", "numero_documento"], where: whereUsuario },
+            includeCurso
+        ],
+        attributes: ["id_alumno"],
+        order: [[{ model: Usuario, as: 'usuario' }, 'apellido', 'ASC'], [{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']],
+        distinct: true,
+        subQuery: false,
+        limit,
+        offset
+    });
+
+    // Próximas asignaciones futuras en el mismo ciclo para los alumnos de la página
+    const alumnoIds = result.rows.map(a => a.id_alumno).filter(Boolean);
+    const futurosMap = new Map();
+    if (alumnoIds.length > 0) {
+        const futuros = await AlumnosCursos.findAll({
+            where: {
+                id_alumno: { [Op.in]: alumnoIds },
+                fecha_inicio: { [Op.gt]: sequelize.fn('NOW') },
+                fecha_fin: { [Op.is]: null }
+            },
+            include: [{ model: Curso, as: 'curso', attributes: ['id_curso','anio_escolar','division','id_ciclo'], where: { id_ciclo } }]
+        });
+        for (const f of futuros) {
+            const prev = futurosMap.get(f.id_alumno);
+            if (!prev || new Date(f.fecha_inicio) < new Date(prev.fecha_inicio)) {
+                futurosMap.set(f.id_alumno, f);
+            }
+        }
+    }
+
+    const data = result.rows.map(a => {
+        const c = (a.cursos && a.cursos[0]) ? a.cursos[0] : null;
+        const nombreCurso = c ? `${c.anio_escolar}${c.division ? ` ${c.division}` : ''}` : null;
+        const fut = futurosMap.get(a.id_alumno);
+        const pc = fut?.curso || null;
+        const proxNombre = pc ? `${pc.anio_escolar}${pc.division ? ` ${pc.division}` : ''}` : null;
+        return {
+            id_alumno: a.id_alumno,
+            id: a.id_alumno,
+            apellido: a.usuario?.apellido,
+            nombre: a.usuario?.nombre,
+            numero_documento: a.usuario?.numero_documento,
+            curso_actual: nombreCurso,
+            cursos: c ? [{ ...c.toJSON?.() || c, nombre_curso: nombreCurso }] : [],
+            cambio_programado: !!pc,
+            proximo_curso: pc ? { ...(pc.toJSON?.() || pc), nombre_curso: proxNombre, fecha_inicio: fut?.fecha_inicio } : null,
+        };
+    });
+    return { data, total: result.count };
+}
+
+export const assignCursoBulk = async ({ ids, id_curso }) => {
+    const curso = await Curso.findByPk(id_curso, { include: [{ model: CiclosLectivos, as: 'cicloLectivo', attributes: ['estado', 'id_ciclo'] }] });
+    if (!curso) return { error: 'Curso no encontrado' };
+    const estado = String(curso?.cicloLectivo?.estado || '').toLowerCase();
+    if (!['abierto', 'planeamiento', 'abierta', 'en planeamiento'].includes(estado)) {
+        return { error: 'El curso no pertenece a un ciclo en estado abierto/planeamiento' };
+    }
+    const cicloDestinoId = curso.id_ciclo;
+
+    const results = [];
+    let updated = 0;
+
+    for (const id of ids) {
+        const t = await sequelize.transaction();
+        try {
+            // Verificar si ya tiene un curso activo en el mismo ciclo destino
+            const activo = await AlumnosCursos.findOne({
+                where: { id_alumno: id, fecha_fin: { [Op.is]: null } },
+                include: [{ model: Curso, as: 'curso', required: true, attributes: ['id_curso','id_ciclo'], where: { id_ciclo: cicloDestinoId } }],
+                transaction: t,
+                lock: t.LOCK.UPDATE
+            });
+            if (activo) {
+                await t.rollback();
+                results.push({ id, ok: false, error: 'El alumno ya tiene un curso activo en este ciclo' });
+                continue;
+            }
+            // Evitar doble programación futura en el mismo ciclo
+            const futuro = await AlumnosCursos.findOne({
+                where: { id_alumno: id, fecha_inicio: { [Op.gt]: sequelize.fn('NOW') }, fecha_fin: { [Op.is]: null } },
+                include: [{ model: Curso, as: 'curso', required: true, attributes: ['id_curso','id_ciclo'], where: { id_ciclo: cicloDestinoId } }],
+                transaction: t,
+                lock: t.LOCK.UPDATE
+            });
+            if (futuro) {
+                await t.rollback();
+                const same = Number(futuro.id_curso) === Number(id_curso);
+                results.push({ id, ok: false, error: same ? 'El alumno ya tiene este curso programado' : 'El alumno ya tiene un cambio de curso programado en este ciclo' });
+                continue;
+            }
+            await AlumnosCursos.create({ id_alumno: id, id_curso, fecha_inicio: sequelize.fn('NOW'), fecha_fin: null }, { transaction: t });
+            await t.commit();
+            updated += 1;
+            results.push({ id, ok: true });
+        } catch (err) {
+            await t.rollback();
+            results.push({ id, ok: false, error: 'No se pudo asignar: ' + (err?.message || 'Error') });
+        }
+    }
+
+    return { updated, results };
+}
+
+export const moveCursoBulk = async ({ ids, id_curso }) => {
+    const curso = await Curso.findByPk(id_curso, { include: [{ model: CiclosLectivos, as: 'cicloLectivo', attributes: ['estado', 'id_ciclo'] }] });
+    if (!curso) return { error: 'Curso no encontrado' };
+    const estado = String(curso?.cicloLectivo?.estado || '').toLowerCase();
+    if (!['abierto', 'planeamiento', 'abierta', 'en planeamiento'].includes(estado)) {
+        return { error: 'El curso no pertenece a un ciclo en estado abierto/planeamiento' };
+    }
+    const cicloDestinoId = curso.id_ciclo;
+
+    const results = [];
+    let updated = 0;
+
+    for (const id of ids) {
+        const t = await sequelize.transaction();
+        try {
+            // Buscar activo sólo en el mismo ciclo destino
+            const activosMismoCiclo = await AlumnosCursos.findAll({
+                where: { id_alumno: id, fecha_fin: { [Op.is]: null } },
+                include: [{ model: Curso, as: 'curso', required: true, attributes: ['id_curso','id_ciclo'], where: { id_ciclo: cicloDestinoId } }],
+                transaction: t,
+                lock: t.LOCK.UPDATE
+            });
+            // Evitar doble programación futura en el mismo ciclo
+            const futuro = await AlumnosCursos.findOne({
+                where: { id_alumno: id, fecha_inicio: { [Op.gt]: sequelize.fn('NOW') }, fecha_fin: { [Op.is]: null } },
+                include: [{ model: Curso, as: 'curso', required: true, attributes: ['id_curso','id_ciclo'], where: { id_ciclo: cicloDestinoId } }],
+                transaction: t,
+                lock: t.LOCK.UPDATE
+            });
+            if (futuro) {
+                await t.rollback();
+                const same = Number(futuro.id_curso) === Number(id_curso);
+                results.push({ id, ok: false, error: same ? 'El alumno ya tiene este curso programado' : 'El alumno ya tiene un cambio de curso programado en este ciclo' });
+                continue;
+            }
+            const activo = activosMismoCiclo[0] || null;
+            if (!activo) {
+                await t.rollback();
+                results.push({ id, ok: false, error: 'El alumno no tiene curso activo en este ciclo' });
+                continue;
+            }
+            if (Number(activo.id_curso) === Number(id_curso)) {
+                await t.rollback();
+                results.push({ id, ok: false, error: 'El curso destino es el mismo que el activo' });
+                continue;
+            }
+            // Cerrar únicamente cursos activos del mismo ciclo destino
+            const idsCursosCerrar = activosMismoCiclo.map(r => r.id_curso);
+            if (idsCursosCerrar.length > 0) {
+                await AlumnosCursos.update(
+                    { fecha_fin: sequelize.fn('NOW') },
+                    { where: { id_alumno: id, fecha_fin: { [Op.is]: null }, id_curso: { [Op.in]: idsCursosCerrar } }, transaction: t }
+                );
+            }
+
+            // fecha_inicio: current_date + 1
+            const fechaManiana = new Date();
+            fechaManiana.setDate(fechaManiana.getDate() + 1);
+            await AlumnosCursos.create({ id_alumno: id, id_curso, fecha_inicio: fechaManiana, fecha_fin: null }, { transaction: t });
+
+            await t.commit();
+            updated += 1;
+            results.push({ id, ok: true });
+        } catch (err) {
+            await t.rollback();
+            results.push({ id, ok: false, error: 'No se pudo mover: ' + (err?.message || 'Error') });
+        }
+    }
+
+    return { updated, results };
 }

@@ -18,7 +18,7 @@ export const getCursos = async (req, res) => {
 // Obtener todos los cursos
 export const obtenerCursos = async (req, res) => {
   try {
-    const { page = 1, perPage = 10, sort = 'id', order = 'ASC', anio_escolar, division, id_ciclo } = req.query;
+    const { page = 1, perPage = 10, sort = 'id', order = 'ASC', anio_escolar, division, id_ciclo, estado } = req.query;
 
     const where = {};
     if (anio_escolar) where.anio_escolar = anio_escolar;
@@ -32,11 +32,27 @@ export const obtenerCursos = async (req, res) => {
     const limit = parseInt(perPage, 10);
     const offset = (parseInt(page, 10) - 1) * limit;
 
+    const cicloInclude = { model: CiclosLectivos, as: "cicloLectivo", attributes: ["id_ciclo", "anio", "estado"] };
+    if (estado) {
+      const estados = String(estado)
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter((s) => s.length > 0);
+      const allowed = ['abierto', 'planeamiento', 'abierta', 'en planeamiento'];
+      const filtered = estados.filter((e) => allowed.includes(e));
+      if (filtered.length > 0) {
+        cicloInclude.where = { estado: { [Op.iLike]: { toString() { return filtered.length === 1 ? filtered[0] : `%`; } } } };
+        // Fallback: apply an IN filter via Op.or to avoid advanced patterns
+        delete cicloInclude.where;
+        cicloInclude.where = { [Op.or]: filtered.map((e) => ({ estado: { [Op.iLike]: e } })) };
+      }
+    }
+
     const { rows, count } = await Curso.findAndCountAll({
       where,
       limit,
       offset,
-      include: [{ model: CiclosLectivos, as: "cicloLectivo", attributes: ["id_ciclo", "anio", "estado"] }],
+      include: [cicloInclude],
       attributes: ["id_curso", "anio_escolar", "division", "id_ciclo"],
       order: [[sortColumn, sortOrder]],
     });
