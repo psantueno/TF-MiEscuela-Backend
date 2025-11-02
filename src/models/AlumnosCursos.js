@@ -26,7 +26,7 @@ export const AlumnosCursos = sequelize.define("AlumnosCursos", {
     },
     fecha_fin: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: true
     },
 }, {
     tableName: "alumnos_cursos",

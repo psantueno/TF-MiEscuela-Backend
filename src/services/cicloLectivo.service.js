@@ -3,8 +3,32 @@ import { Op } from "sequelize";
 
 export const getCiclos = async (limit, offset, filters = {}) => {
   const where = {};
-  if (filters.anio) where.anio = parseInt(filters.anio);
-  if (filters.estado) where.estado = { [Op.iLike]: `%${filters.estado}%` };
+  if (filters.anio) {
+    const anos = Array.isArray(filters.anio)
+      ? filters.anio
+      : String(filters.anio)
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+    if (anos.length === 1) {
+      where.anio = String(anos[0]);
+    } else if (anos.length > 1) {
+      where.anio = { [Op.in]: anos.map(String) };
+    }
+  }
+  if (filters.estado) {
+    const estados = Array.isArray(filters.estado)
+      ? filters.estado
+      : String(filters.estado)
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+    if (estados.length === 1) {
+      where.estado = { [Op.iLike]: estados[0] };
+    } else if (estados.length > 1) {
+      where[Op.or] = estados.map((e) => ({ estado: { [Op.iLike]: e } }));
+    }
+  }
 
   const { rows, count } = await CiclosLectivos.findAndCountAll({
     where,
