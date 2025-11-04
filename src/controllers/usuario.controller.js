@@ -84,7 +84,8 @@ export const deleteUsuario = async (req, res, next) => {
 
         await usuarioService.deleteUsuario(id_usuario);
 
-        res.sendStatus(204);
+        // Para React-Admin, devolver el id eliminado
+        res.status(200).json({ id: parseInt(id_usuario, 10) });
     }catch(error){
         next(error);
     }

@@ -1,4 +1,6 @@
 import * as cicloService from "../services/cicloLectivo.service.js";
+import { CiclosLectivos } from "../models/index.js";
+import { Op } from 'sequelize';
 
 const toDateOnly = (value) => {
   if (!value) return null;
@@ -20,10 +22,36 @@ const mapCiclo = (c) => ({
 
 export const getCiclos = async (req, res, next) => {
   try {
-    const { page = 1, perPage = 10, anio, estado } = req.query;
+    const { _start, _end, _sort, _order } = req.query;
+    const estado = req.query.estado;
+    // RA Simple REST variant (Content-Range + array)
+    if (_start !== undefined && _end !== undefined) {
+      const start = parseInt(_start, 10) || 0;
+      const end = parseInt(_end, 10) || 0;
+      const limit = Math.max(0, end - start);
+      const offset = Math.max(0, start);
+      const w = {};
+      if (estado) w.estado = { [Op.iLike]: String(estado) };
+      const allowed = ['id', 'id_ciclo', 'anio', 'nombre'];
+      const orderCol = allowed.includes(String(_sort)) ? (String(_sort) === 'id' ? 'id_ciclo' : (String(_sort) === 'nombre' ? 'anio' : _sort)) : 'anio';
+      const orderDir = String(_order).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+      const { rows, count } = await CiclosLectivos.findAndCountAll({
+        where: w,
+        limit,
+        offset,
+        order: [[orderCol, orderDir]],
+        attributes: ['id_ciclo','anio','estado']
+      });
+      const items = rows.map(c => ({ id: c.id_ciclo, nombre: c.anio, estado: c.estado }));
+      res.set('Content-Range', `ciclos ${start}-${start + items.length - 1}/${count}`);
+      res.set('Access-Control-Expose-Headers', 'Content-Range');
+      return res.status(200).json(items);
+    }
+
+    // Legacy variant
+    const { page = 1, perPage = 10, anio } = req.query;
     const limit = parseInt(perPage);
     const offset = (parseInt(page) - 1) * limit;
-
     const { data, total } = await cicloService.getCiclos(limit, offset, { anio, estado });
     const mapped = data.map(mapCiclo);
     return res.status(200).json({ data: mapped, total });
