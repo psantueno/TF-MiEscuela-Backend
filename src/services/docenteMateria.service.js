@@ -89,6 +89,52 @@ const baseInclude = [
   }
 ];
 
+const toDDMMYYYY = (d) => {
+  try {
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return undefined;
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const yyyy = dt.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  } catch { return undefined; }
+};
+
+const assertValidRange = (fecha_inicio, fecha_fin) => {
+  if (fecha_fin && new Date(fecha_fin).getTime() < new Date(fecha_inicio).getTime()) {
+    throw new DatabaseError('La fecha de fin no puede ser anterior a la fecha de inicio.', 400);
+  }
+};
+
+const checkOverlapAndThrow = async ({ id_docente, id_materia_curso, fecha_inicio, fecha_fin }, ignoreKey) => {
+  const where = {
+    id_docente,
+    id_materia_curso,
+    [Op.and]: [
+      { fecha_inicio: { [Op.lte]: fecha_fin ? new Date(fecha_fin) : sequelize.fn('NOW') } },
+      {
+        [Op.or]: [
+          { fecha_fin: { [Op.gte]: new Date(fecha_inicio) } },
+          { fecha_fin: null }
+        ]
+      }
+    ]
+  };
+  if (ignoreKey) {
+    where[Op.not] = {
+      id_docente: ignoreKey.id_docente,
+      id_materia_curso: ignoreKey.id_materia_curso,
+      fecha_inicio: ignoreKey.fecha_inicio
+    };
+  }
+  const exists = await DocentesMateriasCurso.findOne({ where, attributes: ['id_docente','fecha_inicio','fecha_fin'] });
+  if (exists) {
+    const fi = toDDMMYYYY(exists.fecha_inicio);
+    const ff = exists.fecha_fin ? toDDMMYYYY(exists.fecha_fin) : 'actualidad';
+    throw new DatabaseError(`Ya existe una asignación superpuesta para este docente y materia/curso entre ${fi} y ${ff}. Ajustá el período para que no se solape.`, 409);
+  }
+};
+
 const assertNoOverlap = async ({ id_docente, id_materia_curso, fecha_inicio, fecha_fin }, ignoreKey) => {
   // Reglas de solapamiento para el mismo docente + materia_curso
   // Overlap si: nuevo_inicio <= fin_existente (o fin_existente IS NULL) AND (nuevo_fin IS NULL OR nuevo_fin >= inicio_existente)
@@ -214,6 +260,8 @@ export const createAsignacion = async (payload) => {
   const rol_docente = payload.rol_docente || 'Titular';
 
   await assertCicloNoCerrado(id_materia_curso);
+  assertValidRange(fecha_inicio, fecha_fin);
+  await checkOverlapAndThrow({ id_docente, id_materia_curso, fecha_inicio, fecha_fin });
   await assertNoOverlap({ id_docente, id_materia_curso, fecha_inicio, fecha_fin });
 
   const row = await DocentesMateriasCurso.create({ id_docente, id_materia_curso, rol_docente, fecha_inicio, fecha_fin });
@@ -235,6 +283,8 @@ export const updateAsignacion = async (id, payload) => {
   };
 
   // si cambió rango, verificar solapamiento
+  assertValidRange(next.fecha_inicio, next.fecha_fin);
+  await checkOverlapAndThrow({ id_docente: row.id_docente, id_materia_curso: row.id_materia_curso, fecha_inicio: next.fecha_inicio, fecha_fin: next.fecha_fin }, key);
   await assertNoOverlap({ id_docente: row.id_docente, id_materia_curso: row.id_materia_curso, fecha_inicio: next.fecha_inicio, fecha_fin: next.fecha_fin }, key);
 
   // Si cambió fecha_inicio, debemos borrar y crear (PK cambia)

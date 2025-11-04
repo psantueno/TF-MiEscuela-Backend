@@ -40,11 +40,32 @@ export const list = async (limit, offset, { sort, order, filters = {} }) => {
   if (Array.isArray(filters.ids) && filters.ids.length > 0) {
     where.id_materia_curso = { [Op.in]: filters.ids.map(v => parseInt(v, 10)).filter(n => !Number.isNaN(n)) };
   }
-  if (filters.id_materia) where.id_materia = parseInt(filters.id_materia, 10);
-  if (filters.id_curso) where.id_curso = parseInt(filters.id_curso, 10);
-  // Filtro por ciclo en include
-  if (filters.id_ciclo) {
-    include[0].include = include[0].include.map(inc => inc.as === 'cicloLectivo' ? { ...inc, where: { id_ciclo: parseInt(filters.id_ciclo, 10) } } : inc);
+  // id_materia puede ser único o array
+  if (filters.id_materia !== undefined) {
+    if (Array.isArray(filters.id_materia)) {
+      const ids = filters.id_materia.map(v => parseInt(v, 10)).filter(n => !Number.isNaN(n));
+      if (ids.length > 0) where.id_materia = { [Op.in]: ids };
+    } else {
+      const v = parseInt(filters.id_materia, 10);
+      if (!Number.isNaN(v)) where.id_materia = v;
+    }
+  }
+  // id_curso puede ser único o array
+  if (filters.id_curso !== undefined) {
+    if (Array.isArray(filters.id_curso)) {
+      const ids = filters.id_curso.map(v => parseInt(v, 10)).filter(n => !Number.isNaN(n));
+      if (ids.length > 0) where.id_curso = { [Op.in]: ids };
+    } else {
+      const v = parseInt(filters.id_curso, 10);
+      if (!Number.isNaN(v)) where.id_curso = v;
+    }
+  }
+  // Filtro por ciclo en include (soporta único o array)
+  if (filters.id_ciclo !== undefined) {
+    const toIds = (val) => Array.isArray(val) ? val.map(v => parseInt(v, 10)) : [parseInt(val, 10)];
+    const ids = toIds(filters.id_ciclo).filter(n => !Number.isNaN(n));
+    const whereCiclo = ids.length <= 1 ? { id_ciclo: ids[0] } : { id_ciclo: { [Op.in]: ids } };
+    include[0].include = include[0].include.map(inc => inc.as === 'cicloLectivo' ? { ...inc, where: whereCiclo } : inc);
   }
   if (filters.q) {
     // Buscar por nombre de materia, año o división del curso
