@@ -11,8 +11,9 @@ const parseRAListParams = (req) => {
   // Permitir solo: id_docente, numero_documento (DNI) e id_ciclo
   const filters = {};
   if (raw.id_docente !== undefined) filters.id_docente = raw.id_docente;
-  if (raw.numero_documento !== undefined) filters.numero_documento = raw.numero_documento;
+  if (raw.docente_numero_documento !== undefined) filters.numero_documento = raw.docente_numero_documento;
   if (raw.id_ciclo !== undefined) filters.id_ciclo = raw.id_ciclo;
+  if(raw.id_materia_curso !== undefined) filters.id_materia_curso = raw.id_materia_curso;
   // También aceptar query params directos si vinieran
   if (req.query.id_docente !== undefined) filters.id_docente = req.query.id_docente;
   if (req.query.numero_documento !== undefined) filters.numero_documento = req.query.numero_documento;
