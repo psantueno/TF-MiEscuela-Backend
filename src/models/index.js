@@ -118,6 +118,16 @@ MateriasCurso.belongsToMany(Docente, {
   as: 'docentes'
 });
 
+// Relaciones directas sobre la tabla pivote para facilitar includes/filters
+DocentesMateriasCurso.belongsTo(Docente, {
+  foreignKey: 'id_docente',
+  as: 'docente'
+});
+DocentesMateriasCurso.belongsTo(MateriasCurso, {
+  foreignKey: 'id_materia_curso',
+  as: 'materiaCurso'
+});
+
 // TipoCalificacion - Calificacion (1 a Muchos)
 TipoCalificacion.hasMany(Calificacion, {
   foreignKey: 'id_tipo_calificacion',

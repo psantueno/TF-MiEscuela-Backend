@@ -24,6 +24,9 @@ import tutorRoutes from "./routes/tutor.routes.js";
 import cicloLectivoRoutes from "./routes/cicloLectivo.routes.js";
 import informePedagogicoRoutes from "./routes/informePedagogico.js";
 import asesorPedagogicoRoutes from "./routes/asesorPedagogico.routes.js";
+import docenteMateriaRoutes from "./routes/docenteMateria.routes.js";
+import materiasCursoRoutes from "./routes/materiasCurso.routes.js";
+import docenteRoutes from "./routes/docente.routes.js";
 // =================================================
 
 const app = express();
@@ -66,6 +69,9 @@ app.use("/api/tutores", tutorRoutes);
 app.use("/api/ciclos-lectivos", cicloLectivoRoutes);
 app.use("/api/informes-pedagogicos", informePedagogicoRoutes);
 app.use("/api/asesores-pedagogicos", asesorPedagogicoRoutes);
+app.use("/api/docentes-materias-curso", docenteMateriaRoutes);
+app.use("/api/materias-curso", materiasCursoRoutes);
+app.use("/api/docentes", docenteRoutes);
 // ──────────────── Manejo de errores ────────────────
 app.use(errorHandler);
 

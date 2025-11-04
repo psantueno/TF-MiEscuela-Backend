@@ -315,6 +315,9 @@ export const updateUsuario = async (id_usuario, data) => {
                 },
             ]
         });
+        if (!user) {
+            throw new DatabaseError("El usuario no existe", 404);
+        }
 
         await user.update({
             nombre: data.nombre,
@@ -330,6 +333,7 @@ export const updateUsuario = async (id_usuario, data) => {
         // Role changes removed: this endpoint no longer updates roles
         
         await t.commit();
+        return true;
 
         const updatedUser = await Usuario.findByPk(id_usuario, { 
             include: [

@@ -1,0 +1,95 @@
+import { Op } from 'sequelize';
+import { MateriasCurso, Curso, CiclosLectivos, Materia, sequelize } from '../models/index.js';
+
+export const getById = async (id_materia_curso) => {
+  const row = await MateriasCurso.findByPk(id_materia_curso, {
+    include: [
+      { model: Curso, as: 'curso', attributes: ['id_curso', 'anio_escolar', 'division'], include: [{ model: CiclosLectivos, as: 'cicloLectivo', attributes: ['id_ciclo', 'estado', 'anio'] }] },
+      { model: Materia, as: 'materia', attributes: ['id_materia', 'nombre'] }
+    ],
+    attributes: ['id_materia_curso', 'id_curso', 'id_materia']
+  });
+  if (!row) return null;
+  const j = row.toJSON ? row.toJSON() : row;
+  return {
+    id: j.id_materia_curso,
+    id_materia_curso: j.id_materia_curso,
+    id_curso: j.id_curso ?? j.curso?.id_curso,
+    id_materia: j.id_materia ?? j.materia?.id_materia,
+    materia_nombre: j.materia?.nombre,
+    curso_anio_escolar: j.curso?.anio_escolar,
+    curso_division: j.curso?.division,
+    curso_label: j.curso ? `${j.curso.anio_escolar}º ${j.curso.division}` : undefined,
+    id_ciclo: j.curso?.cicloLectivo?.id_ciclo,
+    ciclo_estado: j.curso?.cicloLectivo?.estado,
+    ciclo_anio: j.curso?.cicloLectivo?.anio,
+  };
+};
+
+export const list = async (limit, offset, { sort, order, filters = {} }) => {
+  const sortOrder = String(order || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+  const allowed = ['id_materia_curso', 'materia_nombre', 'curso_anio_escolar', 'curso_division'];
+  const sortField = allowed.includes(sort) ? sort : 'materia_nombre';
+
+  const include = [
+    { model: Curso, as: 'curso', attributes: ['id_curso', 'anio_escolar', 'division'], include: [{ model: CiclosLectivos, as: 'cicloLectivo', attributes: ['id_ciclo', 'estado', 'anio'] }] },
+    { model: Materia, as: 'materia', attributes: ['id_materia', 'nombre'] }
+  ];
+
+  const where = {};
+  if (Array.isArray(filters.ids) && filters.ids.length > 0) {
+    where.id_materia_curso = { [Op.in]: filters.ids.map(v => parseInt(v, 10)).filter(n => !Number.isNaN(n)) };
+  }
+  if (filters.id_materia) where.id_materia = parseInt(filters.id_materia, 10);
+  if (filters.id_curso) where.id_curso = parseInt(filters.id_curso, 10);
+  // Filtro por ciclo en include
+  if (filters.id_ciclo) {
+    include[0].include = include[0].include.map(inc => inc.as === 'cicloLectivo' ? { ...inc, where: { id_ciclo: parseInt(filters.id_ciclo, 10) } } : inc);
+  }
+  if (filters.q) {
+    // Buscar por nombre de materia, año o división del curso
+    include[1].where = { ...(include[1].where || {}), nombre: { [Op.iLike]: `%${filters.q}%` } };
+    include[0].where = { ...(include[0].where || {}), [Op.or]: [
+      { anio_escolar: { [Op.iLike]: `%${filters.q}%` } },
+      { division: { [Op.iLike]: `%${filters.q}%` } }
+    ] };
+  }
+
+  const orderClause = (() => {
+    if (sortField === 'materia_nombre') return [[{ model: Materia, as: 'materia' }, 'nombre', sortOrder]];
+    if (sortField === 'curso_anio_escolar') return [[{ model: Curso, as: 'curso' }, 'anio_escolar', sortOrder]];
+    if (sortField === 'curso_division') return [[{ model: Curso, as: 'curso' }, 'division', sortOrder]];
+    return [[sortField, sortOrder]];
+  })();
+
+  const query = {
+    where,
+    include,
+    order: orderClause,
+    distinct: true
+  };
+  if (limit !== undefined) query.limit = limit;
+  if (offset !== undefined) query.offset = offset;
+
+  const { rows, count } = await MateriasCurso.findAndCountAll(query);
+
+  const data = rows.map(r => {
+    const j = r.toJSON ? r.toJSON() : r;
+    const curso = j.curso;
+    const materia = j.materia;
+    return {
+      id: j.id_materia_curso,
+      id_materia_curso: j.id_materia_curso,
+      id_materia: j.id_materia ?? materia?.id_materia,
+      materia_nombre: materia?.nombre,
+      id_curso: j.id_curso ?? curso?.id_curso,
+      curso_anio_escolar: curso?.anio_escolar,
+      curso_division: curso?.division,
+      curso_label: curso ? `${curso.anio_escolar}º ${curso.division}` : undefined,
+      id_ciclo: curso?.cicloLectivo?.id_ciclo,
+      ciclo_estado: curso?.cicloLectivo?.estado,
+      ciclo_anio: curso?.cicloLectivo?.anio,
+    };
+  });
+  return { data, total: Array.isArray(filters.ids) && filters.ids.length > 0 ? data.length : count };
+};

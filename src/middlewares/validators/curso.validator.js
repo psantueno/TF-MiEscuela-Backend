@@ -35,6 +35,19 @@ const updateSchema = z
     path: ["body"],
   });
 
+// Variante extendida para permitir materiaIds en PUT /cursos/:id
+const updateSchemaV2 = z
+  .object({
+    anio_escolar: z.number().int().min(1).optional(),
+    division: z.string().max(10).optional(),
+    id_ciclo: z.number().int().min(1).optional(),
+    materiaIds: z.array(z.number().int()).optional(),
+  })
+  .refine((val) => ['anio_escolar','division','id_ciclo','materiaIds'].some((k) => val[k] !== undefined), {
+    message: "Debe enviar al menos un campo para actualizar",
+    path: ["body"],
+  });
+
 const idParamSchema = z.object({
   id: z
     .number({ message: "El ID del curso debe ser un número" })
@@ -99,7 +112,7 @@ export const validateUpdateCurso = (req, res, next) => {
           ? Number(req.body.id_ciclo)
           : undefined,
     };
-    updateSchema.parse(body);
+    updateSchemaV2.parse(body);
     next();
   } catch (error) {
     const err = errorHandler(error, z);
