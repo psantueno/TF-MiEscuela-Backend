@@ -192,6 +192,24 @@ export const listAsignaciones = async (limit, offset, { sort, order, filters = {
     }
   }
 
+  console.log("Filters in service.listAsignaciones:", filters);
+
+  if (filters.numero_documento) {
+    where['$docente.usuario.numero_documento$'] = {
+      [Op.iLike]: `%${filters.numero_documento}%`
+    };
+  }
+
+  if(filters.id_materia_curso) {
+    if(Array.isArray(filters.id_materia_curso)) {
+      where['$materiaCurso.id_materia_curso$'] = {
+        [Op.in]: filters.id_materia_curso
+      };
+    }else{
+      where['$materiaCurso.id_materia_curso$'] = parseInt(filters.id_materia_curso, 10);
+    }
+  }
+
   // includes con posibilidad de filtrar sólo por DNI (numero_documento)
   const include = [
     {
@@ -202,7 +220,6 @@ export const listAsignaciones = async (limit, offset, { sort, order, filters = {
         model: Usuario,
         as: 'usuario',
         attributes: ['apellido', 'nombre', 'numero_documento'],
-        ...(filters.numero_documento ? { where: { numero_documento: { [Op.iLike]: `%${String(filters.numero_documento)}%` } } } : {})
       }]
     },
     {

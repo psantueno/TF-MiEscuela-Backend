@@ -7,7 +7,7 @@ export const getInformesPedagogicos = async (queryParams = null) => {
 
     if(queryParams && queryParams.id_alumno) informeWhereClause.id_alumno = queryParams.id_alumno;
     
-    if(queryParams && queryParams.id_curso) materiasCursoWhereClause.id_curso = queryParams.id_curso;
+    //if(queryParams && queryParams.id_curso) materiasCursoWhereClause.id_curso = queryParams.id_curso;
     if(queryParams && queryParams.id_materia) materiasCursoWhereClause.id_materia = queryParams.id_materia;
 
     const informes = await InformePedagogico.findAll({

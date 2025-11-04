@@ -1,4 +1,3 @@
-import { map } from "zod";
 import { Alumno, Docente, Usuario, Curso, Materia, Calificacion, MateriasCurso, TipoCalificacion, CiclosLectivos } from "../models/index.js";
 
 const mapCalificaciones = (calificaciones) => {
@@ -11,7 +10,7 @@ const mapCalificaciones = (calificaciones) => {
             fecha: plainCalificacion.fecha,
             publicado: plainCalificacion.publicado,
             materiaCurso: {
-                id_materia: plainCalificacion.materiaCurso.id_materia_curso,
+                id_materia: plainCalificacion.materiaCurso.id_materia,
                 materia: {
                     nombre: plainCalificacion.materiaCurso.materia.nombre
                 },
@@ -179,6 +178,7 @@ export const getCalificaciones = async (idCurso, idMateria, idAlumno, user) => {
     const orderClause = [
         [{ model: Alumno, as: 'alumno' }, { model: Usuario, as: 'usuario' }, 'apellido', 'ASC'],
         [{ model: Alumno, as: 'alumno' }, { model: Usuario, as: 'usuario' }, 'nombre', 'ASC'],
+        [{ model: TipoCalificacion, as: 'tipoCalificacion' }, 'descripcion', 'ASC'],
         ['fecha', 'ASC']
     ];
 

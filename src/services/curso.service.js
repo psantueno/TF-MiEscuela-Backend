@@ -7,22 +7,29 @@ import { Op } from "sequelize";
  * Asesor Pedagógico: solo cursos asignados (pendiente)
  */
 export const getCursos = async (user) => {
+    const cicloActual = new Date().getFullYear();
+
     if(user.rol === "Administrador" || user.rol === "Director" || user.rol === "Asesor Pedagogico"){
         const cursos = await Curso.findAll({
             attributes: [
-                [sequelize.fn('MAX', sequelize.col('id_curso')), 'id_curso'],
+                'id_curso',
                 'anio_escolar',
                 'division'
             ],
-            group: ['anio_escolar', 'division'],
+            include: [
+                {
+                    model: CiclosLectivos,
+                    as: 'cicloLectivo',
+                    attributes: []
+                }
+            ],
             order: [['anio_escolar', 'ASC'], ['division', 'ASC']],
+            where: {'$cicloLectivo.anio$': cicloActual.toString()}
         });
         return cursos;
     }
     
     if(user.rol === "Docente"){
-        const cicloActual = new Date().getFullYear();
-
         const docente = await Docente.findOne({
             where: { id_usuario: user.id_usuario },
             attributes: ['id_docente']
@@ -141,7 +148,10 @@ export const getAlumnosPorCurso = async (idCurso) => {
                 model: Curso,
                 as: 'cursos',
                 where: { id_curso: idCurso },
-                attributes: []
+                attributes: [],
+                through: {
+                    where: { fecha_fin: null}
+                }
             },
             {
                 model: Usuario,
@@ -150,7 +160,7 @@ export const getAlumnosPorCurso = async (idCurso) => {
             }
         ],
         attributes: ['id_alumno'],
-        order: [[{ model: Usuario, as: 'usuario' }, 'apellido', 'ASC'], [{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']]
+        order: [[{ model: Usuario, as: 'usuario' }, 'apellido', 'ASC'], [{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC']],
     });
 
     return alumnos;
