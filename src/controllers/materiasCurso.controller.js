@@ -18,7 +18,14 @@ const parseListParams = (req) => {
   let jsonFilter = {};
   if (filter) { try { jsonFilter = JSON.parse(filter); } catch { jsonFilter = {}; } }
   const ids = Array.isArray(jsonFilter.id) ? jsonFilter.id.map(v => parseInt(v, 10)).filter(n => !Number.isNaN(n)) : undefined;
-  return { limit, offset, sort: _sort, order: _order, filters: { q, id_materia, id_curso, id_ciclo, ids } };
+  const merged = {
+    q,
+    id_materia: jsonFilter.id_materia !== undefined ? jsonFilter.id_materia : id_materia,
+    id_curso: jsonFilter.id_curso !== undefined ? jsonFilter.id_curso : id_curso,
+    id_ciclo: jsonFilter.id_ciclo !== undefined ? jsonFilter.id_ciclo : id_ciclo,
+    ids,
+  };
+  return { limit, offset, sort: _sort, order: _order, filters: merged };
 };
 
 export const list = async (req, res, next) => {
@@ -40,7 +47,15 @@ export const list = async (req, res, next) => {
     const order = req.query.order;
     const limit = perPage;
     const offset = (page - 1) * perPage;
-    const filters = { q: req.query.q, id_materia: req.query.id_materia, id_curso: req.query.id_curso, id_ciclo: req.query.id_ciclo };
+    let jsonFilter = {};
+    if (req.query.filter) { try { jsonFilter = JSON.parse(req.query.filter); } catch { jsonFilter = {}; } }
+    const filters = {
+      q: req.query.q,
+      id_materia: jsonFilter.id_materia !== undefined ? jsonFilter.id_materia : req.query.id_materia,
+      id_curso: jsonFilter.id_curso !== undefined ? jsonFilter.id_curso : req.query.id_curso,
+      id_ciclo: jsonFilter.id_ciclo !== undefined ? jsonFilter.id_ciclo : req.query.id_ciclo,
+      ids: Array.isArray(jsonFilter.id) ? jsonFilter.id.map(v => parseInt(v, 10)).filter(n => !Number.isNaN(n)) : undefined,
+    };
     const { data, total } = await svc.list(limit, offset, { sort, order, filters });
     return res.status(200).json({ data, total });
   } catch (err) { next(err); }
