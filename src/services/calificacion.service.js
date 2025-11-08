@@ -218,7 +218,7 @@ export const getCalificacionesPorAlumno = async (idAlumno, user) => {
                     {
                         model: Curso,
                         as: 'curso',
-                        attributes: ['anio_escolar', 'division'],
+                        attributes: ['anio_escolar', 'division', 'id_curso'],
                         include: [
                             {
                                 model: CiclosLectivos,
@@ -262,7 +262,11 @@ export const getTiposCalificacion = async () => {
 
 export const updateManyCalificaciones = async (calificaciones, user) => {
     let idDocente = null;
-    if(user.rol !== "Docente") idDocente = calificaciones[0].id_docente;
+    if(user.rol !== "Docente") {
+        const docentes = await getCurrentActiveDocentePorCursoMateria(calificaciones[0].id_curso, calificaciones[0].id_materia);
+        const plainDocentes = docentes.get({ plain: true });
+        idDocente = plainDocentes.docentes.find(docente => docente.DocentesMateriasCurso.rol_docente === "Titular").id_docente;
+    }
     if(user.rol === "Docente"){
         const docente = await Docente.findOne({
             where: { id_usuario: user.id_usuario },
@@ -277,7 +281,6 @@ export const updateManyCalificaciones = async (calificaciones, user) => {
         const { id_calificacion, ...updateData } = calificacion;
         return Calificacion.update({
             nota: parseFloat(updateData.nota),
-            observaciones: updateData.observaciones,
             id_tipo_calificacion: updateData.id_tipo_calificacion,
             id_docente: idDocente,
             fecha: new Date()
@@ -289,7 +292,11 @@ export const updateManyCalificaciones = async (calificaciones, user) => {
 export const createManyCalificaciones = async (calificaciones, user) => {
         let idDocente = null;
 
-        if(user.rol !== "Docente") idDocente = calificaciones[0].id_docente;
+        if(user.rol !== "Docente") {
+            const docentes = await getCurrentActiveDocentePorCursoMateria(calificaciones[0].id_curso, calificaciones[0].id_materia);
+            const plainDocentes = docentes.get({ plain: true });
+            idDocente = plainDocentes.docentes.find(docente => docente.DocentesMateriasCurso.rol_docente === "Titular").id_docente;
+        }
         if(user.rol === "Docente"){
             const docente = await Docente.findOne({
                 where: { id_usuario: user.id_usuario },
@@ -320,4 +327,25 @@ export const createManyCalificaciones = async (calificaciones, user) => {
         });
     });
     await Promise.all(createPromises);
+}
+
+const getCurrentActiveDocentePorCursoMateria = async (idCurso, idMateria) => {
+    const docentes = MateriasCurso.findOne({
+        include: [
+            {
+                model: Docente,
+                as: 'docentes',
+                attributes: ['id_docente', 'id_usuario'],
+                through: {
+                    attributes: ['rol_docente'],
+                    where: {fecha_fin: null}
+                }
+            }
+        ],
+        where: {
+            id_curso: idCurso,
+            id_materia: idMateria
+        }
+    })
+    return docentes;
 }
