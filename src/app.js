@@ -3,12 +3,15 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
+import path from "path";
+
 import { sequelize } from "./config/database.js";
 import "./jobs/publicarCalificaciones.js";
+
 // Inicializa asociaciones entre modelos
 import "./models/index.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
-import cookieParser from "cookie-parser";
 
 // ====================== Rutas ===================
 import authRoutes from "./routes/auth.routes.js";
@@ -27,14 +30,26 @@ import asesorPedagogicoRoutes from "./routes/asesorPedagogico.routes.js";
 import docenteMateriaRoutes from "./routes/docenteMateria.routes.js";
 import materiasCursoRoutes from "./routes/materiasCurso.routes.js";
 import docenteRoutes from "./routes/docente.routes.js";
+import justificativosRoutes from "./routes/justificativoAsistencia.routes.js";
 // =================================================
 
 const app = express();
 
 // ──────────────── Middlewares globales ────────────────
 
-app.use(helmet()); // Seguridad HTTP headers
-app.use(cors({ origin: "http://localhost:5173", credentials: true })); //  Cambiár la URL por la del frontend en producción
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // 👈 Permite que otros orígenes usen los recursos
+    crossOriginOpenerPolicy: false, // 👈 Desactiva el bloqueo de apertura
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "http://localhost:5173"], // 👈 Permite imágenes desde tu frontend
+      },
+    },
+  })
+);
+app.use(cors({ origin: "http://localhost:5173", credentials: true , methods: ["GET", "POST", "PUT", "DELETE"] })); //  Cambiár la URL por la del frontend en producción
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -50,6 +65,9 @@ const limiter = rateLimit({
 app.use("/api", limiter);
 
 app.use(cookieParser()); // Parseo de cookies
+
+// ──────────────── Visualizacion de images ────────────────
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads"))); // Desactivar cache para desarrollo
 
 // ──────────────── ROUTER ────────────────
 app.get("/", (req, res) => {
@@ -72,6 +90,7 @@ app.use("/api/asesores-pedagogicos", asesorPedagogicoRoutes);
 app.use("/api/docentes-materias-curso", docenteMateriaRoutes);
 app.use("/api/materias-curso", materiasCursoRoutes);
 app.use("/api/docentes", docenteRoutes);
+app.use("/api/justificativos", justificativosRoutes);
 // ──────────────── Manejo de errores ────────────────
 app.use(errorHandler);
 

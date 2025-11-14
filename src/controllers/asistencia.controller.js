@@ -1,5 +1,6 @@
 import { Op } from "sequelize";
 import { Asistencia, Alumno, Curso, Usuario, AsistenciaEstado } from "../models/index.js";
+import * as asistenciaService from "../services/asistencia.service.js";
 
 // Crear asistencia (lote por curso)
 export const tomarAsistenciaCurso = async (req, res) => {
@@ -280,5 +281,16 @@ export const eliminarAsistenciasCurso = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error eliminando asistencias del curso" });
+  }
+};
+
+export const obtenerInasistenciasAlumnoRecientes = async (req, res) => {
+  const { id_alumno } = req.params;
+  try {
+    const inasistencias = await asistenciaService.getInasistenciasAlumno(id_alumno);
+    res.json(inasistencias);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error obteniendo inasistencias recientes del alumno" });
   }
 };
