@@ -8,6 +8,7 @@ import {
   obtenerAsistenciasAlumnoEntreFechas,
   eliminarAsistenciasCurso,
   obtenerPromedioAsistenciasCurso,
+  obtenerInasistenciasAlumnoRecientes
 } from "../controllers/asistencia.controller.js";
 
 const router = express.Router();
@@ -24,4 +25,5 @@ router.get("/curso/:id_curso", obtenerAsistenciasCursoEntreFechas);
 router.get("/alumno/:id_alumno", obtenerAsistenciasAlumnoEntreFechas);
 router.delete("/curso/:id_curso", eliminarAsistenciasCurso);
 router.get("/curso/:id_curso/promedio", obtenerPromedioAsistenciasCurso);
+router.get("/alumno/:id_alumno/ausentes", obtenerInasistenciasAlumnoRecientes);
 export default router;

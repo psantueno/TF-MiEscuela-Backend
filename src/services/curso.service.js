@@ -1,4 +1,4 @@
-import { Materia, Curso, Alumno, Usuario, Docente, MateriasCurso, AlumnosCursos, CiclosLectivos, sequelize} from "../models/index.js";
+import { Materia, Curso, Alumno, Usuario, Docente, MateriasCurso, CiclosLectivos, Auxiliar, sequelize} from "../models/index.js";
 import { Op } from "sequelize";
 
 /** Retorna los cursos según el rol del usuario
@@ -57,6 +57,48 @@ export const getCursos = async (user) => {
                     model: CiclosLectivos,
                     as: 'cicloLectivo',
                     attributes: []
+                }
+            ],
+            attributes: [
+                'id_curso',
+                'anio_escolar',
+                'division',
+            ],
+            order: [
+                ['anio_escolar', 'ASC'],
+                ['division', 'ASC']
+            ],
+        });
+        return cursos;
+    }
+
+    if(user.rol === "Auxiliar"){
+        const auxiliar = await Auxiliar.findOne({
+            where: { id_usuario: user.id_usuario },
+            attributes: ['id_auxiliar']
+        });
+
+        const cursos = await Curso.findAll({
+            where: { 
+                '$cicloLectivo.anio$': cicloActual.toString(),
+                '$auxiliares.id_auxiliar$': auxiliar.id_auxiliar
+            },
+            include: [
+                {
+                    model: CiclosLectivos,
+                    as: 'cicloLectivo',
+                    attributes: []
+                },
+                {
+                    model: Auxiliar,
+                    as: 'auxiliares',
+                    include: [
+                        {
+                            model: Usuario,
+                            as: 'usuario',
+                            attributes: []
+                        }
+                    ],
                 }
             ],
             attributes: [

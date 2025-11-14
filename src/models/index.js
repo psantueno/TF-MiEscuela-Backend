@@ -14,12 +14,14 @@ import { Administrador } from "./Administrador.js";
 import { Rol } from "./Rol.js";
 import { AlumnosCursos } from "./AlumnosCursos.js";
 import { MateriasCurso } from "./MateriasCurso.js";
+import { Auxiliar } from "./Auxiliar.js";
 import { AuxiliaresCurso } from "./AuxiliaresCurso.js";
 import { CiclosLectivos } from "./CiclosLectivos.js";
 import { DocentesMateriasCurso } from "./DocentesMateriasCurso.js";
 import { TipoCalificacion } from "./TipoCalificacion.js";
 import { InformePedagogico } from "./InformePedagogico.js";
 import { AsesorPedagogico } from "./AsesorPedagogico.js";
+import { JustificativosAsistencia } from "./JustificativosAsistencia.js";
 
 // Alumno - usuario
 Alumno.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
@@ -35,6 +37,11 @@ Usuario.hasOne(Docente, { foreignKey: "id_usuario", as: "docente" });
 Tutor.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
 // Usuario - Tutor
 Usuario.hasOne(Tutor, { foreignKey: "id_usuario", as: "tutor" });
+
+// Auxiliar - Usuario
+Auxiliar.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
+// Usuario - Auxiliar
+Usuario.hasOne(Auxiliar, { foreignKey: "id_usuario", as: "auxiliar" });
 
 // AsesorPedagogico - Usuario
 AsesorPedagogico.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
@@ -69,6 +76,19 @@ Asistencia.belongsTo(Alumno, { foreignKey: "id_alumno" });
 Asistencia.belongsTo(Usuario, { foreignKey: "registrado_por" });
 // asistencia - estado
 Asistencia.belongsTo(AsistenciaEstado, { foreignKey: "id_estado" });
+
+// JustificativosAsistencia - Asistencia
+JustificativosAsistencia.belongsTo(Asistencia, { foreignKey: "id_asistencia", as: "asistencia" });
+Asistencia.hasMany(JustificativosAsistencia, { foreignKey: "id_asistencia", as: "justificativos" });
+
+// JustificativosAsistencia - Tutor
+JustificativosAsistencia.belongsTo(Tutor, { foreignKey: "id_tutor", as: "tutor" });
+// JustificativosAsistencia - Auxiliar
+JustificativosAsistencia.belongsTo(Auxiliar, { foreignKey: "id_auxiliar", as: "auxiliar" });
+// Tutor - JustificativosAsistencia
+Tutor.hasMany(JustificativosAsistencia, { foreignKey: "id_tutor", as: "justificativos" });
+// Auxiliar - JustificativosAsistencia
+Auxiliar.hasMany(JustificativosAsistencia, { foreignKey: "id_auxiliar", as: "justificativos" });
 
 // Curso - Materia (Muchos a Muchos) a través de MateriasCurso
 Curso.hasMany(MateriasCurso, {
@@ -173,16 +193,9 @@ Calificacion.belongsTo(MateriasCurso, {
   as: 'materiaCurso'
 });
 
-// AuxiliaresCurso - Curso (Muchos a 1)
-AuxiliaresCurso.belongsTo(Curso, {
-  foreignKey: 'id_curso',
-  as: 'curso'
-});
-// Curso - AuxiliaresCurso (1 a Muchos)
-Curso.hasMany(AuxiliaresCurso, {
-  foreignKey: 'id_curso',
-  as: 'auxiliaresCurso'
-});
+// Auxiliar - Curso (Muchos a Muchos) a través de AuxiliaresCurso
+Auxiliar.belongsToMany(Curso, { through: AuxiliaresCurso, foreignKey: 'id_auxiliar', otherKey: 'id_curso', as: 'cursos' });
+Curso.belongsToMany(Auxiliar, { through: AuxiliaresCurso, foreignKey: 'id_curso', otherKey: 'id_auxiliar', as: 'auxiliares' });
 
 // Alumno - Tutor (Muchos a Muchos) a través de AlumnoPadre
 Alumno.belongsToMany(Tutor, { through: AlumnoTutor, foreignKey: 'id_alumno', otherKey: 'id_tutor', as: 'tutores' });
@@ -243,5 +256,7 @@ export {
   CiclosLectivos,
   TipoCalificacion,
   InformePedagogico,
-  AsesorPedagogico
+  AsesorPedagogico,
+  JustificativosAsistencia,
+  Auxiliar
 };
