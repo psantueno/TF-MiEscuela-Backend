@@ -197,6 +197,11 @@ Calificacion.belongsTo(MateriasCurso, {
 Auxiliar.belongsToMany(Curso, { through: AuxiliaresCurso, foreignKey: 'id_auxiliar', otherKey: 'id_curso', as: 'cursos' });
 Curso.belongsToMany(Auxiliar, { through: AuxiliaresCurso, foreignKey: 'id_curso', otherKey: 'id_auxiliar', as: 'auxiliares' });
 
+// AuxiliaresCurso - Auxiliar
+AuxiliaresCurso.belongsTo(Auxiliar, { foreignKey: 'id_auxiliar', as: 'auxiliar' });
+// AuxiliaresCurso - Curso
+AuxiliaresCurso.belongsTo(Curso, { foreignKey: 'id_curso', as: 'curso' });
+
 // Alumno - Tutor (Muchos a Muchos) a través de AlumnoPadre
 Alumno.belongsToMany(Tutor, { through: AlumnoTutor, foreignKey: 'id_alumno', otherKey: 'id_tutor', as: 'tutores' });
 Tutor.belongsToMany(Alumno, { through: AlumnoTutor, foreignKey: 'id_tutor', otherKey: 'id_alumno', as: 'alumnos' });

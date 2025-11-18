@@ -43,10 +43,6 @@ export const Calificacion = sequelize.define("Calificacion", {
         type: DataTypes.DATE,
         allowNull: false
     },
-    observaciones: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
     publicado: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
