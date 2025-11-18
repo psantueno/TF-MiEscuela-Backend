@@ -42,7 +42,6 @@ const mapCalificacionesPorAlumno = (calificaciones) => {
         return {
             id_calificacion: plainCalificacion.id_calificacion,
             nota: plainCalificacion.nota,
-            observaciones: plainCalificacion.observaciones,
             fecha: plainCalificacion.fecha,
             publicado: plainCalificacion.publicado,
             alumno: {
@@ -159,7 +158,7 @@ export const getCalificaciones = async (idCurso, idMateria, idAlumno, user) => {
         include: includeBase,
         where: whereClause,
         order: orderClause,
-        attributes: ['id_calificacion', 'nota', 'observaciones', 'fecha', 'publicado'],
+        attributes: ['id_calificacion', 'nota', 'fecha', 'publicado'],
     });
 
     return mapCalificaciones(calificaciones);
@@ -238,7 +237,7 @@ export const updateManyCalificaciones = async (calificaciones, user) => {
     if(user.rol !== "Docente") {
         const docentes = await getCurrentActiveDocentePorCursoMateria(calificaciones[0].id_curso, calificaciones[0].id_materia);
         const plainDocentes = docentes.get({ plain: true });
-        idDocente = plainDocentes.docentes.find(docente => docente.DocentesMateriasCurso.rol_docente === "Titular").id_docente;
+        idDocente = plainDocentes.docentes.find(docente => docente.DocentesMateriasCurso.rol_docente === "Titular" || docente.DocentesMateriasCurso.rol_docente === "Interino").id_docente;
     }
     if(user.rol === "Docente"){
         const docente = await Docente.findOne({
