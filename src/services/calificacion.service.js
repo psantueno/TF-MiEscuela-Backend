@@ -6,7 +6,6 @@ const mapCalificaciones = (calificaciones) => {
         return {
             id_calificacion: plainCalificacion.id_calificacion,
             nota: plainCalificacion.nota,
-            observaciones: plainCalificacion.observaciones,
             fecha: plainCalificacion.fecha,
             publicado: plainCalificacion.publicado,
             materiaCurso: {
@@ -53,7 +52,6 @@ const mapCalificacionesPorAlumno = (calificaciones) => {
         return {
             id_calificacion: plainCalificacion.id_calificacion,
             nota: plainCalificacion.nota,
-            observaciones: plainCalificacion.observaciones,
             fecha: plainCalificacion.fecha,
             publicado: plainCalificacion.publicado,
             alumno: {
@@ -186,7 +184,7 @@ export const getCalificaciones = async (idCurso, idMateria, idAlumno, user) => {
         include: includeBase,
         where: whereClause,
         order: orderClause,
-        attributes: ['id_calificacion', 'nota', 'observaciones', 'fecha', 'publicado'],
+        attributes: ['id_calificacion', 'nota', 'fecha', 'publicado'],
     });
 
     return mapCalificaciones(calificaciones);
@@ -322,7 +320,6 @@ export const createManyCalificaciones = async (calificaciones, user) => {
             id_tipo_calificacion: calificacion.id_tipo_calificacion,
             ciclo_lectivo: new Date().getFullYear(),
             nota: parseFloat(calificacion.nota),
-            observaciones: calificacion.observaciones,
             fecha: new Date()
         });
     });

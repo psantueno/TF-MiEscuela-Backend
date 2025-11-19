@@ -31,6 +31,7 @@ import docenteMateriaRoutes from "./routes/docenteMateria.routes.js";
 import materiasCursoRoutes from "./routes/materiasCurso.routes.js";
 import docenteRoutes from "./routes/docente.routes.js";
 import justificativosRoutes from "./routes/justificativoAsistencia.routes.js";
+import rendimientoRoutes from "./routes/rendimiento.routes.js";
 // =================================================
 
 const app = express();
@@ -91,6 +92,7 @@ app.use("/api/docentes-materias-curso", docenteMateriaRoutes);
 app.use("/api/materias-curso", materiasCursoRoutes);
 app.use("/api/docentes", docenteRoutes);
 app.use("/api/justificativos", justificativosRoutes);
+app.use("/api/rendimiento", rendimientoRoutes);
 // ──────────────── Manejo de errores ────────────────
 app.use(errorHandler);
 
