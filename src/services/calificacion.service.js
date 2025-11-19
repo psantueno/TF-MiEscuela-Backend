@@ -8,39 +8,29 @@ const mapCalificaciones = (calificaciones) => {
             nota: plainCalificacion.nota,
             fecha: plainCalificacion.fecha,
             publicado: plainCalificacion.publicado,
-            materiaCurso: {
+            materia: {
                 id_materia: plainCalificacion.materiaCurso.id_materia,
-                materia: {
-                    nombre: plainCalificacion.materiaCurso.materia.nombre
-                },
-                curso: {
-                    anio_escolar: plainCalificacion.materiaCurso.curso.anio_escolar,
-                    division: plainCalificacion.materiaCurso.curso.division,
-                    cicloLectivo: {
-                        anio: plainCalificacion.materiaCurso.curso.cicloLectivo.anio
-                    },
-                },
-                docentes: plainCalificacion.materiaCurso.docentes.map(docente => ({
-                    id_docente: docente.id_docente,
-                    rol: docente.DocentesMateriasCurso.rol_docente,
-                }))
+                nombre: plainCalificacion.materiaCurso.materia.nombre
             },
+            curso: {
+                anio_escolar: plainCalificacion.materiaCurso.curso.anio_escolar,
+                division: plainCalificacion.materiaCurso.curso.division,
+                cicloLectivo: plainCalificacion.materiaCurso.curso.cicloLectivo.anio
+            },
+            
             alumno: {
                 id_alumno: plainCalificacion.alumno.id_alumno,
-                usuario: {
-                    nombre: plainCalificacion.alumno.usuario.nombre,
-                    apellido: plainCalificacion.alumno.usuario.apellido
-                }
+                nombre: plainCalificacion.alumno.usuario.nombre,
+                apellido: plainCalificacion.alumno.usuario.apellido
             },
             docente: {
                 id_docente: plainCalificacion.docente.id_docente,
-                usuario: {
-                    nombre: plainCalificacion.docente.usuario.nombre,
-                    apellido: plainCalificacion.docente.usuario.apellido
-                }
+                nombre: plainCalificacion.docente.usuario.nombre,
+                apellido: plainCalificacion.docente.usuario.apellido
             },
             tipoCalificacion: {
-                descripcion: plainCalificacion.tipoCalificacion.descripcion
+                descripcion: plainCalificacion.tipoCalificacion.descripcion,
+                id_tipo_calificacion: plainCalificacion.tipoCalificacion.id_tipo_calificacion
             }
         };
     });
@@ -55,32 +45,16 @@ const mapCalificacionesPorAlumno = (calificaciones) => {
             fecha: plainCalificacion.fecha,
             publicado: plainCalificacion.publicado,
             alumno: {
-                id_alumno: plainCalificacion.alumno.id_alumno,
-                usuario: {
-                    nombre: plainCalificacion.alumno.usuario.nombre,
-                    apellido: plainCalificacion.alumno.usuario.apellido
-                }
+                nombre: plainCalificacion.alumno.usuario.nombre,
+                apellido: plainCalificacion.alumno.usuario.apellido
             },
-            materiaCurso:{
-                id_materia: plainCalificacion.materiaCurso.id_materia_curso,
-                materia: {
-                    nombre: plainCalificacion.materiaCurso.materia.nombre
-                },
-                curso: {
-                    anio_escolar: plainCalificacion.materiaCurso.curso.anio_escolar,
-                    division: plainCalificacion.materiaCurso.curso.division,
-                    cicloLectivo: {
-                        anio: plainCalificacion.materiaCurso.curso.cicloLectivo.anio
-                    },
-                },
-                docentes: plainCalificacion.materiaCurso.docentes.map(docente => ({
-                    id_docente: docente.id_docente,
-                    rol: docente.DocentesMateriasCurso.rol_docente,
-                    usuario: {
-                        nombre: docente.usuario.nombre,
-                        apellido: docente.usuario.apellido
-                    }
-                }))
+            materia: {
+                nombre: plainCalificacion.materiaCurso.materia.nombre
+            },
+            curso: {
+                anio_escolar: plainCalificacion.materiaCurso.curso.anio_escolar,
+                division: plainCalificacion.materiaCurso.curso.division,
+                cicloLectivo: plainCalificacion.materiaCurso.curso.cicloLectivo.anio
             },
             tipoCalificacion: {
                 descripcion: plainCalificacion.tipoCalificacion.descripcion
@@ -153,7 +127,7 @@ export const getCalificaciones = async (idCurso, idMateria, idAlumno, user) => {
         {
             model: TipoCalificacion,
             as: 'tipoCalificacion',
-            attributes: ['descripcion']
+            attributes: ['descripcion', 'id_tipo_calificacion']
         }
     ];
 
@@ -263,7 +237,7 @@ export const updateManyCalificaciones = async (calificaciones, user) => {
     if(user.rol !== "Docente") {
         const docentes = await getCurrentActiveDocentePorCursoMateria(calificaciones[0].id_curso, calificaciones[0].id_materia);
         const plainDocentes = docentes.get({ plain: true });
-        idDocente = plainDocentes.docentes.find(docente => docente.DocentesMateriasCurso.rol_docente === "Titular").id_docente;
+        idDocente = plainDocentes.docentes.find(docente => docente.DocentesMateriasCurso.rol_docente === "Titular" || docente.DocentesMateriasCurso.rol_docente === "Interino").id_docente;
     }
     if(user.rol === "Docente"){
         const docente = await Docente.findOne({
@@ -279,9 +253,7 @@ export const updateManyCalificaciones = async (calificaciones, user) => {
         const { id_calificacion, ...updateData } = calificacion;
         return Calificacion.update({
             nota: parseFloat(updateData.nota),
-            id_tipo_calificacion: updateData.id_tipo_calificacion,
-            id_docente: idDocente,
-            fecha: new Date()
+            id_docente: idDocente
         }, { where: { id_calificacion } });
     });
     await Promise.all(updatePromises);
@@ -313,14 +285,19 @@ export const createManyCalificaciones = async (calificaciones, user) => {
             }
         });
 
+        let fecha = calificacion.fecha
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+            fecha = new Date();
+        }
+
+
         return Calificacion.create({
             id_alumno: calificacion.id_alumno,
             id_docente: idDocente,
             id_materia_curso: materiaCurso.id_materia_curso,
             id_tipo_calificacion: calificacion.id_tipo_calificacion,
-            ciclo_lectivo: new Date().getFullYear(),
             nota: parseFloat(calificacion.nota),
-            fecha: new Date()
+            fecha: fecha,
         });
     });
     await Promise.all(createPromises);

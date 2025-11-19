@@ -20,8 +20,16 @@ export const AuxiliaresCurso = sequelize.define("AuxiliaresCurso", {
         },
         primaryKey: true
     },
-    fecha_asignacion: {
+    fecha_inicio: {
         type: DataTypes.DATE,
+        allowNull: false
+    },
+    fecha_fin: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    rol: {
+        type: DataTypes.STRING,
         allowNull: false
     }
 },{
