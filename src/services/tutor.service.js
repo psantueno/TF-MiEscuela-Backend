@@ -21,6 +21,20 @@ const mapHijos = (hijos) => {
     });
 };
 
+const mapTutores = (tutores) => {
+    return tutores.map(tutor => {
+        const plainTutor = tutor.get({ plain: true });
+        return {
+            id_tutor: plainTutor.id_tutor,
+            usuario: {
+                nombre: plainTutor.usuario.nombre,
+                apellido: plainTutor.usuario.apellido,
+                numero_documento: plainTutor.usuario.numero_documento
+            }
+        }
+    });
+}
+
 export const getHijos = async (idTutor) => {
     const tutor = await Tutor.findOne({
         where: { id_tutor: idTutor },
@@ -50,4 +64,22 @@ export const getHijos = async (idTutor) => {
         ]
     });
     return tutor ? mapHijos(tutor.alumnos) : [];
+}
+
+export const getTutores = async () => {
+    const tutores = await Tutor.findAll({
+        include: [
+            {
+                model: Usuario,
+                as: 'usuario',
+                attributes: ['nombre', 'apellido', 'numero_documento']
+            }
+        ],
+        order: [
+            [{ model: Usuario, as: 'usuario' }, 'apellido', 'ASC'],
+            [{ model: Usuario, as: 'usuario' }, 'nombre', 'ASC'],
+        ],
+    });
+
+    return mapTutores(tutores);
 }

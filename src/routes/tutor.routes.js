@@ -9,5 +9,6 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/hijos', isTutor, tutorController.getHijos);
+router.get('/', tutorController.getTutores);
 
 export default router;
