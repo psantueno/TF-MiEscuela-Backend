@@ -5,8 +5,8 @@ import { Op } from "sequelize";
 
 export const getAlumnos = async (req, res) => {
   try {
-    const { id_curso } = req.query;
-    const alumnos = await alumnoService.getAlumnos(id_curso);
+    const { id_curso, numero_documento } = req.query;
+    const alumnos = await alumnoService.getAlumnos({ id_curso, numero_documento });
     res.json(alumnos);
   } catch (err) {
     console.error(err);

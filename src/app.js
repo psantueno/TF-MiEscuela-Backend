@@ -34,6 +34,8 @@ import justificativosRoutes from "./routes/justificativoAsistencia.routes.js";
 import rendimientoRoutes from "./routes/rendimiento.routes.js";
 import auxiliaresRoutes from "./routes/auxiliares.routes.js";
 import auxiliaresCursoRoutes from "./routes/auxiliaresCurso.routes.js";
+import tutorHijosRoutes from "./routes/tutoresHijos.routes.js";
+// =================================================
 
 const app = express();
 
@@ -96,7 +98,7 @@ app.use("/api/justificativos", justificativosRoutes);
 app.use("/api/rendimiento", rendimientoRoutes);
 app.use("/api/auxiliares", auxiliaresRoutes);
 app.use("/api/auxiliares-curso", auxiliaresCursoRoutes);
-
+app.use("/api/tutores-hijos", tutorHijosRoutes);
 // ──────────────── Manejo de errores ────────────────
 app.use(errorHandler);
 

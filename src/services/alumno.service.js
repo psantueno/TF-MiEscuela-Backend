@@ -1,18 +1,21 @@
 import { Alumno, Usuario, Curso, AlumnosCursos, CiclosLectivos, sequelize } from "../models/index.js";
 import { Op } from "sequelize";
 
-export const getAlumnos = async (idCurso) => {
+export const getAlumnos = async (filter) => {
+    const { idCurso, numero_documento } = filter;
     const include = [
         {
             model: Usuario,
-            attributes: ["nombre", "apellido"],
-            as: 'usuario'
+            attributes: ["nombre", "apellido", "numero_documento"],
+            as: 'usuario',
+            ...(numero_documento ? { where: { numero_documento: { [Op.iLike]: `%${numero_documento}%` } } } : {})
         },
         {
             model: Curso,
             as: 'cursos',
             attributes: ['id_curso', 'anio_escolar', 'division'],
-            ...(idCurso ? { where: { id_curso: idCurso } } : {})
+            ...(idCurso ? { where: { id_curso: idCurso } } : {}),
+            through: { where: { fecha_fin: null } }
         }
     ];
 
