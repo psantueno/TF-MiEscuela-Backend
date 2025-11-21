@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+﻿import { Op } from "sequelize";
 import {
   Alumno,
   AlumnoTutor,
@@ -42,7 +42,7 @@ const resolveDateRange = (fechaDesde, fechaHasta) => {
   const desde = fechaDesde ? new Date(fechaDesde) : addDays(hasta, -60);
 
   if (Number.isNaN(desde.getTime()) || Number.isNaN(hasta.getTime())) {
-    throw new Error("Fechas inválidas");
+    throw new Error("Fechas invÃ¡lidas");
   }
 
   if (desde > hasta) {
@@ -75,9 +75,45 @@ const categorizeEstado = (descripcion = "") => {
   return "otro";
 };
 
+// Clasifica tipos de evaluaciï¿½n en buckets usados para KPIs
+const categorizeEvaluacion = (descripcion = "") => {
+  const normalized = descripcion.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  if (normalized.includes("oral")) return "oral";
+  if (normalized.includes("trab") || normalized.includes("pract") || normalized.includes("tp")) {
+    return "tp";
+  }
+  return "escrita";
+};
+
+// Normaliza etiquetas de periodo a claves internas
+const resolvePeriodKey = (label = "") => {
+  const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  if (normalized.includes("primer")) return "primer";
+  if (normalized.includes("segundo")) return "segundo";
+  if (normalized.includes("final")) return "final";
+  return null;
+};
+const resolvePeriodFromTipoCalificacion = (tipo = {}) => {
+  const id = tipo.id_tipo_calificacion ?? tipo.id;
+  if (id === 7) return "primer";
+  if (id === 8) return "segundo";
+  if (id === 9) return "final";
+
+  const normalized = (tipo.descripcion || "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+
+  if (normalized.includes("1") && normalized.includes("cuatr")) return "primer";
+  if (normalized.includes("2") && normalized.includes("cuatr")) return "segundo";
+  if (normalized.includes("final")) return "final";
+
+  return null;
+};
+
 const ensureRoleAllowed = (role, allowed = []) => {
   if (!allowed.includes(role)) {
-    const error = new Error("El usuario no tiene permisos para esta operación");
+    const error = new Error("El usuario no tiene permisos para esta operaciÃ³n");
     error.status = 403;
     throw error;
   }
@@ -126,7 +162,7 @@ const ensureCursoAccess = async (user, idCurso) => {
   if (role === ROLE.DOCENTE || role === ROLE.ASESOR) {
     const docente = await findDocenteByUsuario(user.id_usuario);
     if (!docente) {
-      const error = new Error("No se encontró el docente asociado");
+      const error = new Error("No se encontrÃ³ el docente asociado");
       error.status = 403;
       throw error;
     }
@@ -142,7 +178,7 @@ const ensureCursoAccess = async (user, idCurso) => {
       ],
     });
     if (!vinculo) {
-      const error = new Error("El docente no está asignado a este curso");
+      const error = new Error("El docente no estÃ¡ asignado a este curso");
       error.status = 403;
       throw error;
     }
@@ -160,7 +196,7 @@ const ensureMateriaAccess = async (user, idMateria) => {
   if (role === ROLE.DOCENTE || role === ROLE.ASESOR) {
     const docente = await findDocenteByUsuario(user.id_usuario);
     if (!docente) {
-      const error = new Error("No se encontró el docente asociado");
+      const error = new Error("No se encontrÃ³ el docente asociado");
       error.status = 403;
       throw error;
     }
@@ -176,7 +212,7 @@ const ensureMateriaAccess = async (user, idMateria) => {
       ],
     });
     if (!vinculo) {
-      const error = new Error("El docente no está asignado a esta materia");
+      const error = new Error("El docente no estÃ¡ asignado a esta materia");
       error.status = 403;
       throw error;
     }
@@ -346,8 +382,8 @@ const buildAlerts = (alumnosMetrics = [], asistenciaPorAlumno = []) => {
       asistencia,
       desaprobadas: metric.desaprobadas,
       motivo: level === "high"
-        ? "Indicadores críticos detectados"
-        : "Rendimiento en observación",
+        ? "Indicadores crÃ­ticos detectados"
+        : "Rendimiento en observaciÃ³n",
     });
   });
 
@@ -358,25 +394,25 @@ const generateTextSummary = (scope, payload) => {
   if (scope === "curso") {
     const promedio = payload.kpis?.promedio_general ?? "N/D";
     const asistencia = payload.kpis?.asistencia_30d ?? "N/D";
-    return `El curso ${payload.context?.anio_escolar || ""}${payload.context?.division || ""} presenta un promedio general de ${promedio} y una asistencia del ${asistencia}% en los últimos 30 días.`;
+    return `El curso ${payload.context?.anio_escolar || ""}${payload.context?.division || ""} presenta un promedio general de ${promedio} y una asistencia del ${asistencia}% en los Ãºltimos 30 dÃ­as.`;
   }
 
   if (scope === "materia") {
     const promedio = payload.kpis?.promedio_general ?? "N/D";
-    return `La materia ${payload.context?.nombre || ""} posee un promedio general de ${promedio} en el período seleccionado.`;
+    return `La materia ${payload.context?.nombre || ""} posee un promedio general de ${promedio} en el perÃ­odo seleccionado.`;
   }
 
   if (scope === "alumno") {
     const promedio = payload.kpis?.promedio_general ?? "N/D";
     const asistencia = payload.kpis?.asistencia_30d ?? "N/D";
-    return `El alumno ${payload.context?.nombre || ""} presenta un promedio general de ${promedio} y una asistencia del ${asistencia}% en los últimos 30 días.`;
+    return `El alumno ${payload.context?.nombre || ""} presenta un promedio general de ${promedio} y una asistencia del ${asistencia}% en los Ãºltimos 30 dÃ­as.`;
   }
 
   return "Resumen no disponible.";
 };
 
 export const getCursoSummary = async (filters, user) => {
-  const { id_curso, fecha_desde, fecha_hasta } = filters || {};
+  const { id_curso, id_materia, fecha_desde, fecha_hasta } = filters || {};
   if (!id_curso) {
     const error = new Error("id_curso es obligatorio");
     error.status = 400;
@@ -385,12 +421,22 @@ export const getCursoSummary = async (filters, user) => {
 
   const cursoId = Number(id_curso);
   if (Number.isNaN(cursoId)) {
-    const error = new Error("id_curso debe ser numérico");
+    const error = new Error("id_curso debe ser numÃ©rico");
+    error.status = 400;
+    throw error;
+  }
+
+  const materiaId = id_materia != null ? Number(id_materia) : null;
+  if (id_materia !== undefined && id_materia !== null && Number.isNaN(materiaId)) {
+    const error = new Error("id_materia debe ser numÇ¸rico");
     error.status = 400;
     throw error;
   }
 
   await ensureCursoAccess(user, cursoId);
+  if (materiaId) {
+    await ensureMateriaAccess(user, materiaId);
+  }
   const range = resolveDateRange(fecha_desde, fecha_hasta);
 
   const curso = await Curso.findByPk(cursoId, {
@@ -398,7 +444,7 @@ export const getCursoSummary = async (filters, user) => {
       {
         model: CiclosLectivos,
         as: "cicloLectivo",
-        attributes: ["anio"],
+        attributes: ["anio", "fecha_inicio", "fecha_fin"],
       },
     ],
   });
@@ -410,7 +456,10 @@ export const getCursoSummary = async (filters, user) => {
   }
 
   const materiasCurso = await MateriasCurso.findAll({
-    where: { id_curso: cursoId },
+    where: {
+      id_curso: cursoId,
+      ...(materiaId ? { id_materia: materiaId } : {}),
+    },
     include: [{ model: Materia, as: "materia", attributes: ["id_materia", "nombre"] }],
   });
 
@@ -422,7 +471,10 @@ export const getCursoSummary = async (filters, user) => {
       {
         model: MateriasCurso,
         as: "materiaCurso",
-        where: { id_curso: cursoId },
+        where: {
+          id_curso: cursoId,
+          ...(materiaId ? { id_materia: materiaId } : {}),
+        },
         include: [{ model: Materia, as: "materia", attributes: ["id_materia", "nombre"] }],
       },
       {
@@ -430,6 +482,7 @@ export const getCursoSummary = async (filters, user) => {
         as: "alumno",
         include: [{ model: Usuario, as: "usuario", attributes: ["nombre", "apellido"] }],
       },
+      { model: TipoCalificacion, as: "tipoCalificacion", attributes: ["id_tipo_calificacion", "descripcion"] },
     ],
   });
 
@@ -446,14 +499,14 @@ export const getCursoSummary = async (filters, user) => {
             as: "usuario",
             attributes: ["nombre", "apellido"],
           },
-      {
-        model: Curso,
-        as: "cursos",
-        where: { id_curso: cursoId },
-        attributes: [],
-        through: {
-          attributes: [],
-        },
+          {
+            model: Curso,
+            as: "cursos",
+            where: { id_curso: cursoId },
+            attributes: [],
+            through: {
+              attributes: [],
+            },
           },
         ],
       },
@@ -461,12 +514,113 @@ export const getCursoSummary = async (filters, user) => {
     ],
   });
 
-  const notas = aggregateNotas(asPlain(calificaciones));
+  const plainCalificaciones = asPlain(calificaciones);
+  const notas = aggregateNotas(plainCalificaciones);
   const asistencia = aggregateAsistencia(asPlain(asistencias));
 
-  const asistencia30 = asistencia.total.registros
+  const asistenciaPorcentaje = asistencia.total.registros
     ? percentage(asistencia.total.presentes, asistencia.total.registros)
-    : 0;
+    : null;
+
+  const periodAverages = { primer: [], segundo: [], final: [] };
+  const approvalStats = {
+    escrita: { total: 0, aprobadas: 0 },
+    oral: { total: 0, aprobadas: 0 },
+    tp: { total: 0, aprobadas: 0 },
+  };
+  const rankingPeriodMap = {
+    primer: new Map(),
+    segundo: new Map(),
+    final: new Map(),
+  };
+  const materiasPeriodMap = new Map();
+
+  plainCalificaciones.forEach((row) => {
+    const nota = Number(row.nota);
+    if (!Number.isFinite(nota)) return;
+    const periodoKey = resolvePeriodFromTipoCalificacion(row.tipoCalificacion);
+    const evalType = categorizeEvaluacion(row.tipoCalificacion?.descripcion || "");
+
+    if (periodoKey && periodAverages[periodoKey]) {
+      periodAverages[periodoKey].push(nota);
+    }
+
+    if (evalType && approvalStats[evalType]) {
+      approvalStats[evalType].total += 1;
+      if (nota >= APPROVED_THRESHOLD) approvalStats[evalType].aprobadas += 1;
+    }
+
+    if (periodoKey && rankingPeriodMap[periodoKey] && row.alumno) {
+      const alumnoId = row.alumno.id_alumno;
+      if (!rankingPeriodMap[periodoKey].has(alumnoId)) {
+        rankingPeriodMap[periodoKey].set(alumnoId, {
+          id_alumno: alumnoId,
+          nombre: row.alumno.usuario?.nombre || "",
+          apellido: row.alumno.usuario?.apellido || "",
+          notas: [],
+        });
+      }
+      rankingPeriodMap[periodoKey].get(alumnoId).notas.push(nota);
+    }
+
+    const materiaRowId = row.materiaCurso?.materia?.id_materia;
+    const materiaNombre = row.materiaCurso?.materia?.nombre;
+    if (periodoKey && materiaRowId) {
+      if (!materiasPeriodMap.has(materiaRowId)) {
+        materiasPeriodMap.set(materiaRowId, {
+          id_materia: materiaRowId,
+          id_materia_curso: row.materiaCurso?.id_materia_curso,
+          materia: materiaNombre,
+          notas: { primer: [], segundo: [], final: [] },
+        });
+      }
+      materiasPeriodMap.get(materiaRowId).notas[periodoKey].push(nota);
+    }
+  });
+
+  const promedioPrimer = avg(periodAverages.primer);
+  const promedioSegundo = avg(periodAverages.segundo);
+  const promedioFinal = avg(periodAverages.final);
+
+  const buildRanking = (map) =>
+    Array.from(map.values())
+      .map((item) => ({
+        id_alumno: item.id_alumno,
+        nombre: item.nombre,
+        apellido: item.apellido,
+        promedio: avg(item.notas),
+      }))
+      .sort((a, b) => (b.promedio || 0) - (a.promedio || 0));
+
+  const rankingPorPeriodo = {
+    primer_cuatrimestre: buildRanking(rankingPeriodMap.primer),
+    segundo_cuatrimestre: buildRanking(rankingPeriodMap.segundo),
+    nota_final: buildRanking(rankingPeriodMap.final),
+  };
+
+  const rankingMateriasTop = Array.from(materiasPeriodMap.values())
+    .map((item) => {
+      const promedios = {
+        primer_cuatrimestre: avg(item.notas.primer),
+        segundo_cuatrimestre: avg(item.notas.segundo),
+        nota_final: avg(item.notas.final),
+      };
+      return {
+        id_materia: item.id_materia,
+        id_materia_curso: item.id_materia_curso,
+        materia: item.materia,
+        promedios,
+      };
+    })
+    .sort((a, b) => {
+      const score = (p) =>
+        p.promedios.nota_final ??
+        p.promedios.segundo_cuatrimestre ??
+        p.promedios.primer_cuatrimestre ??
+        -Infinity;
+      return score(b) - score(a);
+    })
+    .slice(0, 10);
 
   const materias = materiasCurso.map((item) => {
     const resumen = notas.porMateria.find((m) => m.id_materia_curso === item.id_materia_curso);
@@ -500,21 +654,36 @@ export const getCursoSummary = async (filters, user) => {
       anio_escolar: curso.anio_escolar,
       division: curso.division,
       ciclo: curso.cicloLectivo?.anio,
+      id_materia: materiaId || null,
     },
     kpis: {
       promedio_general: notas.promedioGeneral,
-      asistencia_30d: asistencia30,
+      promedio_primer_cuatrimestre: promedioPrimer,
+      promedio_segundo_cuatrimestre: promedioSegundo,
+      promedio_final: promedioFinal,
+      asistencia: asistenciaPorcentaje,
+      asistencia_30d: asistenciaPorcentaje,
       desaprobados: notas.porAlumno.reduce((acc, curr) => acc + (curr.desaprobadas || 0), 0),
     },
     materias,
     ranking_alumnos: ranking,
+    ranking_alumnos_por_periodo: rankingPorPeriodo,
+    ranking_materias_top10: rankingMateriasTop,
+    aprobaciones_por_tipo: Object.entries(approvalStats).reduce((acc, [key, value]) => {
+      acc[key] = {
+        total: value.total,
+        aprobadas: value.aprobadas,
+        porcentaje: value.total ? percentage(value.aprobadas, value.total) : null,
+      };
+      return acc;
+    }, {}),
     alertas,
     ia_summary: generateTextSummary("curso", {
       context: {
         anio_escolar: curso.anio_escolar,
         division: curso.division,
       },
-      kpis: { promedio_general: notas.promedioGeneral, asistencia_30d: asistencia30 },
+      kpis: { promedio_general: notas.promedioGeneral, asistencia_30d: asistenciaPorcentaje },
     }),
   };
 
@@ -531,7 +700,7 @@ export const getMateriaSummary = async (filters, user) => {
 
   const materiaId = Number(id_materia);
   if (Number.isNaN(materiaId)) {
-    const error = new Error("id_materia debe ser numérico");
+    const error = new Error("id_materia debe ser numÃ©rico");
     error.status = 400;
     throw error;
   }
@@ -543,7 +712,7 @@ export const getMateriaSummary = async (filters, user) => {
   if (id_ciclo) {
     const cicloId = Number(id_ciclo);
     if (Number.isNaN(cicloId)) {
-      const error = new Error("id_ciclo debe ser numérico");
+      const error = new Error("id_ciclo debe ser numÃ©rico");
       error.status = 400;
       throw error;
     }
@@ -616,7 +785,7 @@ export const getMateriaSummary = async (filters, user) => {
     );
     return {
       id_curso: item.curso.id_curso,
-      curso: `${item.curso.anio_escolar}° ${item.curso.division}`,
+      curso: `${item.curso.anio_escolar}Â° ${item.curso.division}`,
       ciclo: item.curso.cicloLectivo?.anio,
       promedio: promedioCurso?.promedio ?? null,
     };
@@ -654,7 +823,7 @@ export const getAlumnoSummary = async (filters, user) => {
 
   const alumnoId = Number(id_alumno);
   if (Number.isNaN(alumnoId)) {
-    const error = new Error("id_alumno debe ser numérico");
+    const error = new Error("id_alumno debe ser numÃ©rico");
     error.status = 400;
     throw error;
   }
@@ -841,7 +1010,7 @@ export const getAlumnoSummary = async (filters, user) => {
       id_alumno: alumno.id_alumno,
       nombre: `${alumno.usuario?.apellido || ""} ${alumno.usuario?.nombre || ""}`.trim(),
       curso: alumno.cursos?.[0]
-        ? `${alumno.cursos[0].anio_escolar}° ${alumno.cursos[0].division}`
+        ? `${alumno.cursos[0].anio_escolar}Â° ${alumno.cursos[0].division}`
         : null,
     },
     kpis: {
@@ -898,7 +1067,7 @@ export const getAlertas = async (filters, user) => {
   if (id_curso) {
     cursoId = Number(id_curso);
     if (Number.isNaN(cursoId)) {
-      const error = new Error("id_curso debe ser numérico");
+      const error = new Error("id_curso debe ser numÃ©rico");
       error.status = 400;
       throw error;
     }
@@ -909,7 +1078,7 @@ export const getAlertas = async (filters, user) => {
   if (id_ciclo) {
     cicloId = Number(id_ciclo);
     if (Number.isNaN(cicloId)) {
-      const error = new Error("id_ciclo debe ser numérico");
+      const error = new Error("id_ciclo debe ser numÃ©rico");
       error.status = 400;
       throw error;
     }
@@ -1011,7 +1180,7 @@ export const getTutorHijos = async (user) => {
     id_alumno: alumno.id_alumno,
     nombre: `${alumno.usuario?.apellido || ""} ${alumno.usuario?.nombre || ""}`.trim(),
     curso: alumno.cursos?.[0]
-      ? `${alumno.cursos[0].anio_escolar}° ${alumno.cursos[0].division}`
+      ? `${alumno.cursos[0].anio_escolar}Â° ${alumno.cursos[0].division}`
       : null,
   }));
 };
@@ -1048,7 +1217,7 @@ export const buildInforme = async ({ scope, ids = {}, fecha_desde, fecha_hasta }
 };
 
 const IA_STYLE_INSTRUCTIONS =
-  "Redacta un informe pedagógico con máximo 2 carillas (A4) con tono profesional, incluye observaciones sobre desempeño, asistencia y sugerencias para la mejora en línea con lo que marca el asesor pedagógico.";
+  "Redacta un informe pedagÃ³gico con mÃ¡ximo 2 carillas (A4) con tono profesional, incluye observaciones sobre desempeÃ±o, asistencia y sugerencias para la mejora en lÃ­nea con lo que marca el asesor pedagÃ³gico.";
 
 const longDateFormatter = new Intl.DateTimeFormat("es-AR", {
   day: "2-digit",
@@ -1107,7 +1276,7 @@ const deriveAcademicPeriods = (ciclo = {}) => {
     },
     nota_final: {
       nombre: "Nota Final",
-      descripcion: `Calificación integradora registrada al cierre del ciclo ${ciclo.anio} que pondera ambos cuatrimestres.`,
+      descripcion: `CalificaciÃ³n integradora registrada al cierre del ciclo ${ciclo.anio} que pondera ambos cuatrimestres.`,
       referencia: formatLongDate(secondEnd),
     },
   };
@@ -1123,7 +1292,7 @@ const deriveAcademicPeriods = (ciclo = {}) => {
 
 const resolvePeriodLabel = (dateValue, boundaries = {}) => {
   const date = toDateInstance(dateValue);
-  if (!date) return "Sin período definido";
+  if (!date) return "Sin perÃ­odo definido";
   const primerEnd = toDateInstance(boundaries.primer?.end);
   if (primerEnd && date <= primerEnd) return "Primer Cuatrimestre";
   const segundoEnd = toDateInstance(boundaries.segundo?.end);
@@ -1163,7 +1332,7 @@ const buildCalificacionesDataset = (
   };
 
   details.forEach((item) => {
-    const key = item.periodo_referencial || "Sin período definido";
+    const key = item.periodo_referencial || "Sin perÃ­odo definido";
     if (!periodos[key]) {
       periodos[key] = { cantidad: 0, notas: [] };
     }
@@ -1255,18 +1424,18 @@ const buildInformesDataset = (informes = []) =>
     fecha: row.fecha,
     fecha_legible: formatLongDate(row.fecha),
     materia: row.materia_detalle?.nombre || null,
-    asesor_pedagogico: row.asesor_detalle?.nombre || "Asesor pedagógico no identificado",
+    asesor_pedagogico: row.asesor_detalle?.nombre || "Asesor pedagÃ³gico no identificado",
     texto_informe: row.contenido,
   }));
 
 const buildSystemPrompt = (styleInstructions) =>
   [
-    "Eres un asesor pedagógico especializado en análisis académico que elabora informes profesionales para equipos directivos, docentes y tutores.",
-    "Realiza un diagnóstico automático del rendimiento del estudiante analizando calificaciones, tipos de evaluación y porcentaje de asistencia.",
-    "Aplica análisis inferencial y correlacional para identificar cómo se relacionan asistencia y calificaciones, detectar patrones de comportamiento, explicar posibles causas del rendimiento y generar insights académicos claros.",
-    "Detecta riesgos académicos, logros, tendencias y oportunidades de mejora enfocados en el alumno y no en la gestión institucional. Evita indicar como oportunidad de mejora o sugerencia la falta de un registro de calificacion(por ejemplo, calificación final).",
-    "Integra los aportes del asesor pedagógico institucional y expone sugerencias accionables y fundamentadas orientadas a mejorar el desempeño del estudiante.",
-    "No debes listar calificaciones ni las intervenciones del asesor pedagógico literalmente. Usa esos datos como insumos para tu análisis.",
+    "Eres un asesor pedagÃ³gico especializado en anÃ¡lisis acadÃ©mico que elabora informes profesionales para equipos directivos, docentes y tutores.",
+    "Realiza un diagnÃ³stico automÃ¡tico del rendimiento del estudiante analizando calificaciones, tipos de evaluaciÃ³n y porcentaje de asistencia.",
+    "Aplica anÃ¡lisis inferencial y correlacional para identificar cÃ³mo se relacionan asistencia y calificaciones, detectar patrones de comportamiento, explicar posibles causas del rendimiento y generar insights acadÃ©micos claros.",
+    "Detecta riesgos acadÃ©micos, logros, tendencias y oportunidades de mejora enfocados en el alumno y no en la gestiÃ³n institucional. Evita indicar como oportunidad de mejora o sugerencia la falta de un registro de calificacion(por ejemplo, calificaciÃ³n final).",
+    "Integra los aportes del asesor pedagÃ³gico institucional y expone sugerencias accionables y fundamentadas orientadas a mejorar el desempeÃ±o del estudiante.",
+    "No debes listar calificaciones ni las intervenciones del asesor pedagÃ³gico literalmente. Usa esos datos como insumos para tu anÃ¡lisis.",
     styleInstructions,
   ].join(" ");
 
@@ -1279,36 +1448,36 @@ const buildUserPromptFromPayload = (payload) => {
 
   lines.push("Contexto general:");
   lines.push(`- Alumno: ${contexto.alumno || "Sin datos"}`);
-  lines.push(`- Curso/División: ${contexto.curso || contexto.curso_detalle?.division || "N/D"}`);
+  lines.push(`- Curso/DivisiÃ³n: ${contexto.curso || contexto.curso_detalle?.division || "N/D"}`);
   lines.push(`- Ciclo lectivo: ${contexto.ciclo_lectivo?.anio || "N/D"}`);
   lines.push(`- Periodo analizado: ${contexto.periodo_solicitado?.rango_legible || "Sin rango"}`);
   lines.push("");
 
   if (payload.clarificacion_periodos) {
-    lines.push("Clarificación de períodos académicos:");
+    lines.push("ClarificaciÃ³n de perÃ­odos acadÃ©micos:");
     Object.values(payload.clarificacion_periodos).forEach((item) => {
       lines.push(`- ${item.nombre}: ${item.descripcion}`);
     });
     lines.push("");
   }
 
-  lines.push("Detalle de calificaciones (insumo para tu análisis, no incluir literalmente en el informe):");
+  lines.push("Detalle de calificaciones (insumo para tu anÃ¡lisis, no incluir literalmente en el informe):");
   if (payload.calificaciones?.length) {
     payload.calificaciones.forEach((item, index) => {
       lines.push(
         `${index + 1}. ${item.fecha_legible || item.fecha} - ${item.materia || "Materia"} (${
           item.periodo_referencial
-        }) → ${item.tipo}: nota ${item.nota}`
+        }) â†’ ${item.tipo}: nota ${item.nota}`
       );
     });
   } else {
-    lines.push("- No se registran calificaciones en el período solicitado.");
+    lines.push("- No se registran calificaciones en el perÃ­odo solicitado.");
   }
   if (resumen.promedios_generales) {
     const primer = resumen.promedios_generales.primer_cuatrimestre;
     const segundo = resumen.promedios_generales.segundo_cuatrimestre;
     const final = resumen.promedios_generales.nota_final;
-    lines.push("Promedios generales por período:");
+    lines.push("Promedios generales por perÃ­odo:");
     lines.push(`- Primer cuatrimestre: ${primer != null ? primer : "Sin datos"}`);
     lines.push(`- Segundo cuatrimestre: ${segundo != null ? segundo : "Sin datos"}`);
     lines.push(`- Nota final: ${final != null ? final : "Sin registro"}`);
@@ -1321,31 +1490,31 @@ const buildUserPromptFromPayload = (payload) => {
       `- ${asistencia.porcentaje_ciclo}% de asistencia (${asistencia.detalle_registros.presentes} presentes, ${asistencia.detalle_registros.ausentes} ausentes, ${asistencia.detalle_registros.ausentes_justificados} ausentes justificadas, ${asistencia.detalle_registros.tardanzas} tardanzas)`
     );
   } else {
-    lines.push("- No hay registros de asistencia para el período observado.");
+    lines.push("- No hay registros de asistencia para el perÃ­odo observado.");
   }
   lines.push("");
 
-  lines.push("Intervenciones del asesor pedagógico (insumos para el análisis, no para el contexto):");
+  lines.push("Intervenciones del asesor pedagÃ³gico (insumos para el anÃ¡lisis, no para el contexto):");
   if (payload.informes_pedagogicos?.length) {
     payload.informes_pedagogicos.forEach((item, index) => {
       lines.push(
         `${index + 1}. ${item.fecha_legible || item.fecha} - ${
           item.materia || "Materia general"
-        } | Asesor pedagógico: ${item.asesor_pedagogico}. Informe: ${item.texto_informe}`
+        } | Asesor pedagÃ³gico: ${item.asesor_pedagogico}. Informe: ${item.texto_informe}`
       );
     });
   } else {
-    lines.push("- No hay intervenciones registradas en el período.");
+    lines.push("- No hay intervenciones registradas en el perÃ­odo.");
   }
   lines.push("");
 
   lines.push("Instrucciones de estilo:");
   lines.push(payload.instrucciones_estilo || IA_STYLE_INSTRUCTIONS);
   lines.push(
-    "Analiza las calificaciones y el porcentaje de asistencia para inferir logros, alertas y sugerencias alineadas a las intervenciones del asesor pedagógico."
+    "Analiza las calificaciones y el porcentaje de asistencia para inferir logros, alertas y sugerencias alineadas a las intervenciones del asesor pedagÃ³gico."
   );
   lines.push(
-    "No enumeres todas las calificaciones ni reproduzcas listados de cada evaluación; sintetiza hallazgos por período/cuatrimestre."
+    "No enumeres todas las calificaciones ni reproduzcas listados de cada evaluaciÃ³n; sintetiza hallazgos por perÃ­odo/cuatrimestre."
   );
 
   return lines.join("\n");
@@ -1364,7 +1533,7 @@ export const buildInformeIA = async (payload = {}, user) => {
   const alumnoId = Number(id_alumno);
 
   if ([cicloId, cursoId, alumnoId].some((value) => Number.isNaN(value))) {
-    const error = new Error("Los identificadores deben ser numéricos");
+    const error = new Error("Los identificadores deben ser numÃ©ricos");
     error.status = 400;
     throw error;
   }
@@ -1408,7 +1577,7 @@ export const buildInformeIA = async (payload = {}, user) => {
 
   const ciclo = curso.cicloLectivo;
   if (!ciclo) {
-    const error = new Error("No se encontró información del ciclo lectivo");
+    const error = new Error("No se encontrÃ³ informaciÃ³n del ciclo lectivo");
     error.status = 404;
     throw error;
   }
@@ -1416,7 +1585,7 @@ export const buildInformeIA = async (payload = {}, user) => {
   const cicloInicio = toDateInstance(ciclo.fecha_inicio);
   const cicloFin = toDateInstance(ciclo.fecha_fin);
   if (!cicloInicio || !cicloFin) {
-    const error = new Error("El ciclo lectivo no tiene fechas válidas");
+    const error = new Error("El ciclo lectivo no tiene fechas vÃ¡lidas");
     error.status = 400;
     throw error;
   }
@@ -1489,3 +1658,6 @@ export const buildInformeIA = async (payload = {}, user) => {
     },
   };
 };
+
+
+
