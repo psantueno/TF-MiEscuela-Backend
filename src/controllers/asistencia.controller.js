@@ -42,13 +42,16 @@ export const obtenerAsistenciasCursoFecha = async (req, res) => {
 
   try {
     const asistencias = await Asistencia.findAll({
+      distinct: true, // evita duplicados si hay más de un registro en la tabla pivote
       include: [
         {
           model: Alumno,
+          required: true, // solo con alumno válido
           include: [
             {
               model: Curso,
               as: 'cursos',
+              required: true, // solo si pertenece al curso en la fecha
               where: { id_curso },
               attributes: ["anio_escolar", "division"],
               through: {
@@ -65,10 +68,10 @@ export const obtenerAsistenciasCursoFecha = async (req, res) => {
                 }
               }
             },
-            { model: Usuario, attributes: ["nombre", "apellido"], as: 'usuario' },
+            { model: Usuario, attributes: ["nombre", "apellido"], as: 'usuario', required: true },
           ],
         },
-        { model: AsistenciaEstado, attributes: ["descripcion"] },
+        { model: AsistenciaEstado, attributes: ["descripcion"], required: true },
       ],
       where: { fecha: fechaConsulta },                // <-- usar la fecha pedida
     });

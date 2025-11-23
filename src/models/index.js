@@ -22,6 +22,7 @@ import { TipoCalificacion } from "./TipoCalificacion.js";
 import { InformePedagogico } from "./InformePedagogico.js";
 import { AsesorPedagogico } from "./AsesorPedagogico.js";
 import { JustificativosAsistencia } from "./JustificativosAsistencia.js";
+import { UsuarioRol } from "./UsuarioRol.js";
 
 // Alumno - usuario
 Alumno.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
@@ -263,5 +264,6 @@ export {
   InformePedagogico,
   AsesorPedagogico,
   JustificativosAsistencia,
-  Auxiliar
+  Auxiliar,
+  UsuarioRol
 };
