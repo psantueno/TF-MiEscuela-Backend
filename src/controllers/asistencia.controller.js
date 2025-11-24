@@ -1,6 +1,7 @@
 import { Op } from "sequelize";
 import { Asistencia, Alumno, Curso, Usuario, AsistenciaEstado } from "../models/index.js";
 import * as asistenciaService from "../services/asistencia.service.js";
+import { th } from "zod/locales";
 
 // Crear asistencia (lote por curso)
 export const tomarAsistenciaCurso = async (req, res) => {
@@ -297,3 +298,21 @@ export const obtenerInasistenciasAlumnoRecientes = async (req, res) => {
     res.status(500).json({ error: "Error obteniendo inasistencias recientes del alumno" });
   }
 };
+
+export const obtenerAlertasAsistenciasSemanales = async () => {
+  try{
+    const alumnosConInasistenciasCriticas = await asistenciaService.getAlertasAsistenciasSemanales();
+    return alumnosConInasistenciasCriticas;
+  }catch(error){  
+    throw new Error("Error al obtener alertas de asistencias", error);
+  }
+}
+
+export const obtenerAlertasAsistenciasMensuales = async () => {
+  try{
+    const alumnosConInasistenciasCriticas = await asistenciaService.getAlertasAsistenciasMensuales();
+    return alumnosConInasistenciasCriticas;
+  }catch(error){  
+    throw new Error("Error al obtener alertas de asistencias mensuales", error);
+  }
+}

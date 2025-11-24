@@ -1,35 +1,22 @@
 import cron from "node-cron";
-import { Calificacion } from "../models/index.js";
-import { Op } from "sequelize";
-import { DateTime } from "luxon";
-
-const FECHAS_PUBLICACION = ["2025-10-30"];
+import * as cicloLectivoController from "../controllers/cicloLectivo.controller.js";
+import * as calificacionController from "../controllers/calificacion.controller.js";
 
 // Cron job diario a la medianoche
 cron.schedule(
-    "26 21 * * *", // todos los días a las 21:15
+    "00 22 * * *", // todos los días a las 22:00
     async () => {
-        const hoy = DateTime.now().setZone("America/Argentina/Buenos_Aires");
-        const hoyStr = hoy.toISODate(); // "YYYY-MM-DD"
+        try{
+            const { fechaInicio, fechaCierre } = await cicloLectivoController.getFechaPublicacionCalificaciones();
 
-        if (FECHAS_PUBLICACION.includes(hoyStr)) {
-            try {
-                const [actualizados] = await Calificacion.update(
-                    { publicado: true },
-                    {
-                        where: {
-                            publicado: false,
-                            fecha: { [Op.lte]: hoy }
-                        }
-                    }
-                );
-
-                console.log(`✅ ${actualizados} calificaciones publicadas automáticamente.`);
-            } catch (error) {
-                console.error("❌ Error al actualizar calificaciones:", error);
+            if(fechaInicio && fechaCierre){
+                const publicados = await calificacionController.publicarCalificaciones(fechaInicio, fechaCierre);
+                console.log(`Calificaciones publicadas: ${publicados.length}`);
+            }else{
+                console.log("No es la fecha de publicación de calificaciones.");
             }
-        } else {
-            console.log(`🕒 Aún no se alcanzó la fecha de publicación (${FECHAS_PUBLICACION.map(fecha => fecha).join(", ")}).`);
+        }catch(error){  
+            console.error("Error en job de publicación de calificaciones:", error);
         }
     },
     {

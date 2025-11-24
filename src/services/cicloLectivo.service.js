@@ -1,5 +1,6 @@
-import { CiclosLectivos } from "../models/CiclosLectivos.js";
+import { CiclosLectivos, FechasCuatrimestrales } from "../models/index.js";
 import { Op } from "sequelize";
+import { DateTime } from "luxon";
 
 export const getCiclos = async (limit, offset, filters = {}) => {
   const where = {};
@@ -70,3 +71,35 @@ export const deleteCiclo = async (id_ciclo) => {
   return deleted; // number of rows deleted
 };
 
+export const getFechaPublicacionCalificaciones = async () => {
+  const cicloAbierto = await CiclosLectivos.findOne({
+    where: { estado: 'Abierto' },
+    include: [
+      { 
+        model: FechasCuatrimestrales,
+        as: 'fechasCuatrimestrales'
+      }
+    ]
+  });
+
+  const plainCiclo = cicloAbierto.get({ plain: true });
+
+  const fechaActual = new Date(DateTime.now().setZone("America/Argentina/Buenos_Aires").toISO().split('T')[0]);
+  const fechaInicioPrimerCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.inicio_primer_cuatrimestre)
+  const fechaCierrePrimerCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.cierre_primer_cuatrimestre)
+  const fechaInicioSegundoCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.inicio_segundo_cuatrimestre)
+  const fechaCierreSegundoCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.cierre_segundo_cuatrimestre)
+  console.log("Fechas cuatrimestrales:", {
+    fechaInicioPrimerCuatrimestre: fechaInicioPrimerCuatrimestre,
+    fechaCierrePrimerCuatrimestre: fechaCierrePrimerCuatrimestre,
+    fechaInicioSegundoCuatrimestre: fechaInicioSegundoCuatrimestre,
+    fechaCierreSegundoCuatrimestre: fechaCierreSegundoCuatrimestre
+  });
+  console.log("Fecha actual:", fechaActual);
+
+  if(fechaActual.getTime() === fechaCierrePrimerCuatrimestre.getTime()) return { fechaInicio: fechaInicioPrimerCuatrimestre, fechaCierre: fechaCierrePrimerCuatrimestre };
+
+  if(fechaActual.getTime() === fechaCierreSegundoCuatrimestre.getTime())return { fechaInicio: fechaInicioSegundoCuatrimestre, fechaCierre: fechaCierreSegundoCuatrimestre };
+
+  return {  fechaInicio: null, fechaCierre: null };
+}

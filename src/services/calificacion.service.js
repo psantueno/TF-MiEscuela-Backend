@@ -1,4 +1,5 @@
-import { Alumno, Docente, Usuario, Curso, Materia, Calificacion, MateriasCurso, TipoCalificacion, CiclosLectivos } from "../models/index.js";
+import { Alumno, Docente, Usuario, Curso, Materia, Calificacion, MateriasCurso, TipoCalificacion, CiclosLectivos, FechasCuatrimestrales } from "../models/index.js";
+import { Op } from "sequelize";
 
 const mapCalificaciones = (calificaciones) => {
     return calificaciones.map(calificacion => {
@@ -322,4 +323,124 @@ const getCurrentActiveDocentePorCursoMateria = async (idCurso, idMateria) => {
         }
     })
     return docentes;
+}
+
+export const getAlumnosConBajoRendimiento = async () => {
+    const cicloLectivoAbierto = await CiclosLectivos.findOne({
+        where: { estado: 'Abierto' },
+        attributes: ['anio', 'id_ciclo', 'estado'],
+        include: [
+            { 
+                model: FechasCuatrimestrales, 
+                as: 'fechasCuatrimestrales',
+            }
+        ]
+    });
+    const plainCiclo = cicloLectivoAbierto.get({ plain: true });
+
+    const fechaActual = new Date();
+    const fechaInicioPrimerCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.inicio_primer_cuatrimestre);
+    const fechaCierrePrimerCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.cierre_primer_cuatrimestre);
+    const fechaInicioSegundoCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.inicio_segundo_cuatrimestre);
+    const fechaCierreSegundoCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.cierre_segundo_cuatrimestre);
+
+    let fechaInicioFilter = null;
+    let fechaCierreFilter = null;
+
+    if(fechaActual >= fechaInicioPrimerCuatrimestre && fechaActual <= fechaCierrePrimerCuatrimestre){
+        fechaInicioFilter = fechaInicioPrimerCuatrimestre;
+        fechaCierreFilter = fechaCierrePrimerCuatrimestre;
+    }else if(fechaActual >= fechaInicioSegundoCuatrimestre && fechaActual <= fechaCierreSegundoCuatrimestre){
+        fechaInicioFilter = fechaInicioSegundoCuatrimestre;
+        fechaCierreFilter = fechaCierreSegundoCuatrimestre;
+    }
+
+    if(!fechaInicioFilter || !fechaCierreFilter) throw new Error("No se pudo determinar el cuatrimestre actual para análisis de bajo rendimiento.");    
+
+    const calificaciones = await Calificacion.findAll({
+        include: [
+            {
+                model: Alumno,
+                as: 'alumno',
+                include: [
+                    {
+                        model: Usuario,
+                        as: 'usuario',
+                        attributes: ['nombre', 'apellido']
+                    }
+                ]
+            },
+            {
+                model: MateriasCurso,
+                as: 'materiaCurso',
+                include: [
+                    {
+                        model: Materia,
+                        as: 'materia',
+                        attributes: ['nombre', 'id_materia']
+                    },
+                    {
+                        model: Curso,
+                        as: 'curso',
+                        attributes: ['anio_escolar', 'division'],
+                        include: [
+                            {
+                                model: CiclosLectivos,
+                                as: 'cicloLectivo',
+                                attributes: ['anio', 'estado']
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        where: { 
+            id_tipo_calificacion: { [Op.in]: [1, 2] },
+            '$materiaCurso.curso.cicloLectivo.estado$': 'Abierto',
+            fecha: {
+                [Op.between]: [fechaInicioFilter, fechaCierreFilter]
+            }
+        }
+    });
+
+    const plainCalificaciones = calificaciones.map(calificacion => calificacion.get({ plain: true }));
+
+    const mappedResults = [];
+    plainCalificaciones.forEach(calificacion => {
+        if(mappedResults.some(r => r.id_alumno === calificacion.alumno.id_alumno && r.id_materia === calificacion.materiaCurso.materia.id_materia)) {
+            mappedResults.find(r => r.id_alumno === calificacion.alumno.id_alumno && r.id_materia === calificacion.materiaCurso.materia.id_materia).notas.push(calificacion.nota);
+        }else{
+            mappedResults.push({
+                id_alumno: calificacion.alumno.id_alumno,
+                nombre_completo: `${calificacion.alumno.usuario.apellido} ${calificacion.alumno.usuario.nombre}`,
+                id_materia: calificacion.materiaCurso.materia.id_materia,
+                nombre_materia: calificacion.materiaCurso.materia.nombre,
+                notas: [calificacion.nota]
+            });
+        }
+    });
+
+    const filteredResults = mappedResults.filter(alumno => {
+        const notasNumericas = alumno.notas.map(n => parseFloat(n));
+        const promedio = notasNumericas.reduce((acc, val) => acc + val, 0) / notasNumericas.length;
+
+        return notasNumericas.length >= 3 && promedio < 6;
+    });
+
+    return filteredResults;
+}
+
+export const publicarCalificaciones = async (fechaInicio, fechaCierre) => {
+    const [updated] = await Calificacion.update(
+        { publicado: true },
+        {
+            where: {
+                fecha: {
+                    [Op.between]: [fechaInicio, fechaCierre]
+                }
+            }
+        }
+    );
+
+    return calificacionesToUpdate;
 }

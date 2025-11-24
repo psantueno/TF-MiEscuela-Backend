@@ -1,4 +1,5 @@
 // controllers/alumno.controller.js
+import { th } from "zod/locales";
 import { Alumno, Usuario, Asistencia, Curso } from "../models/index.js";
 import * as alumnoService from "../services/alumno.service.js";
 import { Op } from "sequelize";
@@ -162,5 +163,14 @@ export const moveCursoBulk = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error moviendo curso en lote' });
+  }
+}
+
+export const getTutoresAlumno = async (id_alumno) => {
+  try{
+    const tutores = await alumnoService.getTutoresAlumno(id_alumno);
+    return tutores;
+  }catch(error){
+    throw new Error("Error al obtener tutores del alumno", error);
   }
 }
