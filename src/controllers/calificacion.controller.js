@@ -57,3 +57,23 @@ export const createManyCalificaciones = async (req, res) => {
         res.status(500).json({ error: "Error creando calificaciones" });
     }
 }
+
+export const getAlertasBajoRendimiento = async () => {
+    try{
+        const alumnosConBajoRendimiento = await calificacionService.getAlumnosConBajoRendimiento();
+        return alumnosConBajoRendimiento;
+    }catch(error){
+        console.error("Error al obtener alumnos con bajo rendimiento:", error);
+        throw new Error("Error al obtener alumnos con bajo rendimiento", error);
+    }
+}
+
+export const publicarCalificaciones = async (fechaInicio, fechaCierre) => {
+    try{
+        const result = await calificacionService.publicarCalificaciones(fechaInicio, fechaCierre);
+        return result;
+    }catch(error){
+        console.error("Error al publicar calificaciones:", error);
+        throw new Error("Error al publicar calificaciones", error);
+    }
+}

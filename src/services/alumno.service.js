@@ -1,4 +1,4 @@
-import { Alumno, Usuario, Curso, AlumnosCursos, CiclosLectivos, sequelize } from "../models/index.js";
+import { Alumno, Usuario, Curso, AlumnosCursos, CiclosLectivos, Tutor, sequelize } from "../models/index.js";
 import { Op } from "sequelize";
 
 export const getAlumnos = async (filter) => {
@@ -322,4 +322,17 @@ export const moveCursoBulk = async ({ ids, id_curso }) => {
     }
 
     return { updated, results };
+}
+
+export const getTutoresAlumno = async (id_alumno) => {
+    const alumno = await Alumno.findByPk(id_alumno, {
+        include: [
+            {
+                model: Tutor,
+                as: 'tutores',
+                attributes: ['id_tutor', 'id_usuario'],
+            },
+        ],
+    });
+    return alumno?.tutores.map(tutor => tutor.id_usuario) || [];
 }

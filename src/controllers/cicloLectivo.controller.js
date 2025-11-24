@@ -113,3 +113,13 @@ export const deleteCiclo = async (req, res, next) => {
   }
 };
 
+export const getFechaPublicacionCalificaciones = async () => {
+  try {
+    const fechas = await cicloService.getFechaPublicacionCalificaciones();
+    return fechas;
+  } catch (err) {
+    console.error(err);
+    throw new Error("Error al obtener la fecha de publicación de calificaciones", err);
+  }
+}
+

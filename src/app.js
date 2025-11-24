@@ -8,6 +8,8 @@ import path from "path";
 
 import { sequelize } from "./config/database.js";
 import "./jobs/publicarCalificaciones.js";
+import "./jobs/enviarNotificacionesSemanales.js";
+import "./jobs/enviarNotificacionesMensuales.js";
 
 // Inicializa asociaciones entre modelos
 import "./models/index.js";
@@ -35,6 +37,7 @@ import rendimientoRoutes from "./routes/rendimiento.routes.js";
 import auxiliaresRoutes from "./routes/auxiliares.routes.js";
 import auxiliaresCursoRoutes from "./routes/auxiliaresCurso.routes.js";
 import tutorHijosRoutes from "./routes/tutoresHijos.routes.js";
+import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import panelGeneralRoutes from "./routes/panelGeneral.routes.js";
 // =================================================
 
@@ -100,6 +103,7 @@ app.use("/api/rendimiento", rendimientoRoutes);
 app.use("/api/auxiliares", auxiliaresRoutes);
 app.use("/api/auxiliares-curso", auxiliaresCursoRoutes);
 app.use("/api/tutores-hijos", tutorHijosRoutes);
+app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/panelGeneral", panelGeneralRoutes);
 // ──────────────── Manejo de errores ────────────────
 app.use(errorHandler);
