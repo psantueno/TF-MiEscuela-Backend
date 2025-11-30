@@ -23,6 +23,22 @@ export const CiclosLectivos = sequelize.define("CiclosLectivos", {
     estado: {
         type: DataTypes.STRING,
         defaultValue: 'Abierto'
+    },
+    inicio_primer_cuatrimestre: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    cierre_primer_cuatrimestre: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    inicio_segundo_cuatrimestre: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    cierre_segundo_cuatrimestre: {
+        type: DataTypes.DATE,
+        allowNull: false
     }
 },{
     tableName: "ciclos_lectivos",

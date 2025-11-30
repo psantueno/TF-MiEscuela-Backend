@@ -1,5 +1,6 @@
-import { Alumno, Docente, Usuario, Curso, Materia, Calificacion, MateriasCurso, TipoCalificacion, CiclosLectivos, FechasCuatrimestrales } from "../models/index.js";
+import { Alumno, Docente, Usuario, Curso, Materia, Calificacion, MateriasCurso, TipoCalificacion, CiclosLectivos } from "../models/index.js";
 import { Op } from "sequelize";
+import { transformUTCDateOnly } from "../utils/formatLocalDate.js";
 
 const mapCalificaciones = (calificaciones) => {
     return calificaciones.map(calificacion => {
@@ -7,7 +8,7 @@ const mapCalificaciones = (calificaciones) => {
         return {
             id_calificacion: plainCalificacion.id_calificacion,
             nota: plainCalificacion.nota,
-            fecha: plainCalificacion.fecha,
+            fecha: transformUTCDateOnly(plainCalificacion.fecha),
             publicado: plainCalificacion.publicado,
             materia: {
                 id_materia: plainCalificacion.materiaCurso.id_materia,
@@ -328,21 +329,15 @@ const getCurrentActiveDocentePorCursoMateria = async (idCurso, idMateria) => {
 export const getAlumnosConBajoRendimiento = async () => {
     const cicloLectivoAbierto = await CiclosLectivos.findOne({
         where: { estado: 'Abierto' },
-        attributes: ['anio', 'id_ciclo', 'estado'],
-        include: [
-            { 
-                model: FechasCuatrimestrales, 
-                as: 'fechasCuatrimestrales',
-            }
-        ]
+        attributes: ['anio', 'id_ciclo', 'estado', 'inicio_primer_cuatrimestre', 'cierre_primer_cuatrimestre', 'inicio_segundo_cuatrimestre', 'cierre_segundo_cuatrimestre'],
     });
     const plainCiclo = cicloLectivoAbierto.get({ plain: true });
 
     const fechaActual = new Date();
-    const fechaInicioPrimerCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.inicio_primer_cuatrimestre);
-    const fechaCierrePrimerCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.cierre_primer_cuatrimestre);
-    const fechaInicioSegundoCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.inicio_segundo_cuatrimestre);
-    const fechaCierreSegundoCuatrimestre = new Date(plainCiclo.fechasCuatrimestrales.cierre_segundo_cuatrimestre);
+    const fechaInicioPrimerCuatrimestre = new Date(plainCiclo.inicio_primer_cuatrimestre);
+    const fechaCierrePrimerCuatrimestre = new Date(plainCiclo.cierre_primer_cuatrimestre);
+    const fechaInicioSegundoCuatrimestre = new Date(plainCiclo.inicio_segundo_cuatrimestre);
+    const fechaCierreSegundoCuatrimestre = new Date(plainCiclo.cierre_segundo_cuatrimestre);
 
     let fechaInicioFilter = null;
     let fechaCierreFilter = null;

@@ -1,6 +1,7 @@
 import * as cicloService from "../services/cicloLectivo.service.js";
 import { CiclosLectivos } from "../models/index.js";
 import { Op } from 'sequelize';
+import { transformUTCDateOnly } from "../utils/formatLocalDate.js";
 
 const toDateOnly = (value) => {
   if (!value) return null;
@@ -18,6 +19,10 @@ const mapCiclo = (c) => ({
   fecha_inicio: toDateOnly(c.fecha_inicio) || c.fecha_inicio,
   fecha_fin: toDateOnly(c.fecha_fin) || c.fecha_fin,
   estado: c.estado,
+  inicio_primer_cuatrimestre: c.inicio_primer_cuatrimestre ? transformUTCDateOnly(c.inicio_primer_cuatrimestre, "yyyy-MM-dd") : null,
+  cierre_primer_cuatrimestre: c.cierre_primer_cuatrimestre ? transformUTCDateOnly(c.cierre_primer_cuatrimestre, "yyyy-MM-dd") : null,
+  inicio_segundo_cuatrimestre: c.inicio_segundo_cuatrimestre ? transformUTCDateOnly(c.inicio_segundo_cuatrimestre, "yyyy-MM-dd") : null,
+  cierre_segundo_cuatrimestre: c.cierre_segundo_cuatrimestre ? transformUTCDateOnly(c.cierre_segundo_cuatrimestre, "yyyy-MM-dd") : null,
 });
 
 export const getCiclos = async (req, res, next) => {
@@ -63,7 +68,7 @@ export const getCiclos = async (req, res, next) => {
 export const getCiclo = async (req, res, next) => {
   try {
     const { id_ciclo } = req.params;
-    const ciclo = await cicloService.getCiclo(id_ciclo);
+    const ciclo = await cicloService.getCiclo(id_ciclo); 
     if (!ciclo) return res.status(404).json({ error: "Ciclo lectivo no encontrado" });
     return res.status(200).json(mapCiclo(ciclo));
   } catch (err) {
