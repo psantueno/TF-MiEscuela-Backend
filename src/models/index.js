@@ -24,7 +24,6 @@ import { AsesorPedagogico } from "./AsesorPedagogico.js";
 import { JustificativosAsistencia } from "./JustificativosAsistencia.js";
 import { Notificacion } from "./Notificacion.js";
 import { UsuarioRol } from "./UsuarioRol.js";
-import { FechasCuatrimestrales } from "./FechasCuatrimestrales.js";
 
 // Alumno - usuario
 Alumno.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
@@ -248,17 +247,6 @@ Usuario.hasMany(Notificacion, { foreignKey: "id_usuario", as: "notificaciones" }
 // Notificacion - Usuario (Muchos a 1)
 Notificacion.belongsTo(Usuario, { foreignKey: "id_usuario", as: "usuario" });
 
-// FechasCuatrimestrales - CiclosLectivos (Muchos a 1)
-FechasCuatrimestrales.belongsTo(CiclosLectivos, {
-  foreignKey: 'id_ciclo',
-  as: 'cicloLectivo'
-});
-// CiclosLectivos - FechasCuatrimestrales (1 a Muchos)
-CiclosLectivos.hasOne(FechasCuatrimestrales, {
-  foreignKey: 'id_ciclo',
-  as: 'fechasCuatrimestrales'
-});
-
 export {
   sequelize,
   Usuario,
@@ -285,5 +273,4 @@ export {
   Auxiliar,
   Notificacion,
   UsuarioRol,
-  FechasCuatrimestrales
 };

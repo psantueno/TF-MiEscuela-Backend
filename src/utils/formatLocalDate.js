@@ -13,3 +13,13 @@ export const transformUTCToLocalDate = (utcDate) => {
 
     return localDate.toFormat('dd/MM/yyyy HH:mm');
 }
+
+export const transformUTCDateOnly = (utcDate, format = 'dd/MM/yyyy') => {
+    const dateObj = new Date(utcDate);
+    const day = dateObj.getUTCDate() > 9 ? dateObj.getUTCDate() : `0${dateObj.getUTCDate()}`;
+    const month = dateObj.getUTCMonth() > 8 ? (dateObj.getUTCMonth() + 1) : `0${dateObj.getUTCMonth() + 1}`;
+    const year = dateObj.getUTCFullYear();
+
+    const localDate = DateTime.fromObject({ year, month, day });
+    return localDate.toFormat(format);
+}

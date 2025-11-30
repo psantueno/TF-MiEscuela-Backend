@@ -1,6 +1,7 @@
 import { Tutor, JustificativosAsistencia, Usuario, Curso, Alumno, Asistencia, Auxiliar } from "../models/index.js";
 import { Op } from "sequelize";
-import { formatLocalDate } from "../utils/formatLocalDate.js";
+import { formatLocalDate, transformUTCDateOnly } from "../utils/formatLocalDate.js";
+import * as notificacionesController from "../controllers/notificaciones.controller.js";
 
 const mapJustificativos = (justificativos) => {
     return justificativos.map(j => ({
@@ -165,6 +166,28 @@ export const updateJustificativoEstado = async (id_justificativo, estado, motivo
             await asistencia.save();
         }
     }
+
+    // Crear notificación para el tutor
+    const tutor = await Tutor.findByPk(justificativo.id_tutor, {
+        include: [
+            { model: Usuario, as: 'usuario', attributes: ['nombre', 'apellido', 'id_usuario'] }
+        ]
+    });
+
+    const alumnoUsuario = await Usuario.findByPk(alumno.id_usuario);
+
+    const notificacionData = {
+        nombre_completo: `${alumnoUsuario.apellido} ${alumnoUsuario.nombre}`,
+        fecha_inasistencia: transformUTCDateOnly(asistencia.fecha),
+        estado: estado
+    };
+
+    await notificacionesController.createManyNotificaciones('JUSTIFICATIVO_VALIDADO', [
+        {
+            id_usuario: tutor.usuario.id_usuario,
+            ...notificacionData
+        }
+    ]);
 
     return justificativo;
 }

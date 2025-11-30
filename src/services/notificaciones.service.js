@@ -14,6 +14,10 @@ const NOTIFICACIONES = {
     'BAJO_RENDIMIENTO': {
         titulo: 'Alerta de Bajo Rendimiento Académico',
         detalle: 'El alumno ${nombre_completo} tiene un promedio de ${promedio} en la materia ${materia}, lo cual indica un bajo rendimiento académico. Le recomendamos tomar las medidas necesarias para apoyar al alumno. Recuerde que puede revisar las calificaciones en la sección "Calificaciones de mis hijos"'
+    },
+    'JUSTIFICATIVO_VALIDADO': {
+        titulo: 'Justificativo Revisado',
+        detalle: 'El justificativo para el alumno ${nombre_completo} para la fecha ${fecha_inasistencia} ha sido revisado. El auxiliar del curso ha cambiado el estado de su justificativo a "${estado}". Puede revisar el estado de sus justificativos en la sección "Cargar justificativos".'
     }
 }
 
