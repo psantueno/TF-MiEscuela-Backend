@@ -286,12 +286,12 @@ export const createManyCalificaciones = async (calificaciones, user) => {
                 id_materia: calificacion.id_materia
             }
         });
-
+        console.log("calificacion.fecha:", calificacion.fecha);
         let fecha = calificacion.fecha
         if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-            fecha = new Date();
+            fecha = calificacion.fecha;
         }
-
+        console.log("fecha after validation:", fecha);
 
         return Calificacion.create({
             id_alumno: calificacion.id_alumno,
