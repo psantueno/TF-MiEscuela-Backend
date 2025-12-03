@@ -110,17 +110,21 @@ export const obtenerAsistenciasCursoEntreFechas = async (req, res) => {
 
   try {
     const asistencias = await Asistencia.findAll({
+      distinct: true,
       include: [
         {
           model: Alumno,
           include: [
-            { model: Curso, as: 'cursos', where: { id_curso }, attributes: ["anio_escolar", "division"] },
+            { model: Curso, as: 'cursos', attributes: ["anio_escolar", "division"] },
             { model: Usuario, attributes: ["nombre", "apellido"], as: 'usuario' },
           ],
         },
         { model: AsistenciaEstado, attributes: ["descripcion"] },
       ],
-      where: { fecha: { [Op.between]: [desde, hasta] } },
+      where: { 
+        fecha: { [Op.between]: [desde, hasta] },
+        '$Alumno.cursos.id_curso$': id_curso
+      },
     });
 
     const data = asistencias.map((a) => ({
