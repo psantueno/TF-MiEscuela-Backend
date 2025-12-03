@@ -44,7 +44,7 @@ const mapCalificacionesPorAlumno = (calificaciones) => {
         return {
             id_calificacion: plainCalificacion.id_calificacion,
             nota: plainCalificacion.nota,
-            fecha: plainCalificacion.fecha,
+            fecha: transformUTCDateOnly(plainCalificacion.fecha),
             publicado: plainCalificacion.publicado,
             alumno: {
                 nombre: plainCalificacion.alumno.usuario.nombre,
