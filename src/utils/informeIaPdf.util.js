@@ -87,38 +87,31 @@ export const buildInformeIAPdf = async ({ payload, informeText }) => {
 
   const context = payload.contexto_general || {};
   const alumnoNombre = context.alumno || "Alumno";
-  const periodo =
-    context.periodo_solicitado?.rango_legible ||
-    `${formatDate(context.periodo_solicitado?.desde)} al ${formatDate(context.periodo_solicitado?.hasta)}`;
+  const periodo = formatDate(new Date());
 
   if (logoBuffer) {
     doc.image(logoBuffer, 40, 35, { width: 60 });
   }
 
   doc.font("Helvetica-Bold").fontSize(16).text("MiEscuela 4.0", logoBuffer ? 110 : 40, 40);
-  doc.fontSize(12).text("Informe de Rendimiento Académico", logoBuffer ? 110 : 40, 60);
+  doc
+    .fontSize(12)
+    .text("Informe de Rendimiento Academico generado con IA", logoBuffer ? 110 : 40, 60);
 
   doc.moveDown(2);
   addSectionTitle(doc, "Contexto general");
   addKeyValueList(doc, [
     ["Alumno", alumnoNombre],
-    ["Curso / División", context.curso || "N/D"],
+    ["Curso / Division", context.curso || "N/D"],
     ["Ciclo lectivo", context.ciclo_lectivo?.anio || "N/D"],
-    ["Período analizado", periodo || "N/D"],
+    ["Periodo analizado", periodo || "N/D"],
   ]);
 
-  if (informeText) {
-    addSectionTitle(doc, "Informe pedagógico generado con IA");
-    doc.font("Helvetica").fontSize(10).text(informeText, {
-      align: "justify",
-      lineGap: 4,
-    });
-  } else {
-    addSectionTitle(doc, "Informe pedagógico generado con IA");
-    doc.font("Helvetica").fontSize(10).text("No se registró contenido en el informe.", {
-      align: "left",
-    });
-  }
+  doc.moveDown();
+  doc.font("Helvetica").fontSize(10).text(informeText || "No se registro contenido en el informe.", {
+    align: informeText ? "justify" : "left",
+    lineGap: informeText ? 4 : undefined,
+  });
 
   doc.moveDown();
   doc
@@ -126,7 +119,7 @@ export const buildInformeIAPdf = async ({ payload, informeText }) => {
     .fontSize(9)
     .fillColor("#555")
     .text(
-      "Este informe ha sido generado automáticamente a partir de los datos institucionales y la asistencia anual.",
+      "Este informe ha sido generado automaticamente a partir de los datos institucionales y la asistencia anual.",
       { align: "left" }
     );
 
